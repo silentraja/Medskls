@@ -41,6 +41,7 @@ import SendInvoiceToPatient from "./Pages/SalesTeamPages/SendInvoiceToPatient";
 
 import PrivateRoute from "./Components/PrivateRoute";
 import ApplicationReport from "./Pages/AdminDashPages/ApplicationReport";
+import PatientSurveyWithoutLogin from "./Pages/PatientSurveyWithoutLogin";
 
 const App = () => {
   return (
@@ -50,8 +51,9 @@ const App = () => {
           <Layout>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/Patient-Survey-out" element={<PatientSurveyWithoutLogin />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/" element={<Navigate to="/login" />} />
+              <Route path="/" element={<Navigate to="/Patient-Survey-out" />} />
 
               <Route
                 path="/dashboard"
