@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   TextField,
   Button,
@@ -15,6 +15,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Alert,
 } from "@mui/material";
 import {
   AccountCircle,
@@ -29,6 +30,7 @@ import {
 import { useAuth } from "../Context/AuthContext";
 
 const Register = () => {
+  const location = useLocation();
   const [userData, setUserData] = useState({
     username: "",
     email: "",
@@ -42,10 +44,35 @@ const Register = () => {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [hasPendingSurvey, setHasPendingSurvey] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Check for pending survey data
+  useEffect(() => {
+    const pendingSurvey = localStorage.getItem('pendingPatientSubmission');
+    const fromSurvey = location.state?.fromSurvey;
+    
+    if (fromSurvey && location.state?.surveyData?.personalInfo) {
+      // Pre-fill form with survey data
+      const { personalInfo } = location.state.surveyData;
+      setUserData(prev => ({
+        ...prev,
+        fullName: personalInfo.fullName || "",
+        email: personalInfo.email || "",
+        mobile: personalInfo.phone || "",
+        address: personalInfo.address || "",
+        gender: personalInfo.gender || "",
+        dob: personalInfo.dob || ""
+      }));
+    }
+
+    if (pendingSurvey) {
+      setHasPendingSurvey(true);
+    }
+  }, [location.state]);
 
   const validateFields = () => {
     const errors = {};
@@ -79,7 +106,12 @@ const Register = () => {
     try {
       const result = await register(userData);
       if (result.success) {
-        navigate("/login");
+        if (hasPendingSurvey) {
+          // Redirect back to survey to complete submission
+          navigate('/patient-survey-out');
+        } else {
+          navigate("/login");
+        }
       } else {
         setError(result.message || "Registration failed. Please try again.");
       }
@@ -155,13 +187,15 @@ const Register = () => {
               variant={isMobile ? "h5" : "h4"}
               sx={{ fontWeight: 700, mb: 1 }}
             >
-              Create Account
+              {hasPendingSurvey ? "Complete Your Registration" : "Create Account"}
             </Typography>
             <Typography
               variant={isMobile ? "body2" : "body1"}
               sx={{ mb: 3 }}
             >
-              Join us today and get started!
+              {hasPendingSurvey 
+                ? "Finish creating your account to submit your survey" 
+                : "Join us today and get started!"}
             </Typography>
             {!isMobile && (
               <Box sx={{ mt: "auto" }}>
@@ -203,6 +237,12 @@ const Register = () => {
               flexDirection: "column",
             }}
           >
+            {hasPendingSurvey && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                You have an incomplete survey. Your information will be saved after registration.
+              </Alert>
+            )}
+
             {error && (
               <Typography
                 color="error"
@@ -319,7 +359,13 @@ const Register = () => {
                   },
                 }}
               >
-                {loading ? <CircularProgress size={24} color="inherit" /> : "Register"}
+                {loading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : hasPendingSurvey ? (
+                  "Complete Registration & Submit Survey"
+                ) : (
+                  "Register"
+                )}
               </Button>
 
               {isMobile && (
