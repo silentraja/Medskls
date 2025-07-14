@@ -1171,10 +1171,18 @@ const PatientSurveyWithoutLogin = () => {
   };
 
   return (
-    <Grid container spacing={3} sx={{ background: "#fafafa" }}>
+    <Grid
+      container
+      spacing={3}
+      sx={{
+        background: "#fafafa",
+        px: { xs: "16px", sm: "24px" }, // horizontal padding
+        py: { xs: "16px", sm: "24px" }, // vertical padding
+      }}
+    >
       <Grid item xs={12}>
         <Stack sx={{ gap: 3 }}>
-          {user?.UserId && localStorage.getItem('pendingPatientSubmission') && (
+          {user?.UserId && localStorage.getItem("pendingPatientSubmission") && (
             <Alert severity="info" sx={{ mb: 2 }}>
               We found your saved survey data. Please review and submit.
             </Alert>
@@ -1186,16 +1194,20 @@ const PatientSurveyWithoutLogin = () => {
               sx={{ background: "linear-gradient(to right, #ffffff, #f8f5ff)" }}
             >
               <Stack sx={{ gap: 2 }}>
-                <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant="h6"
+                  color="primary"
+                  sx={{ fontWeight: 600 }}
+                >
                   From Skin Concerns to Personalized Care
                 </Typography>
                 <Typography variant="body1" sx={{ color: "#555" }}>
-                  At Medskls Apothecary, our mission is to give you skincare that
-                  actually works—customized for your unique skin and your real-life
-                  routine. This journey begins with understanding you. Here's how
-                  we guide you through a smooth, thoughtful registration process
-                  that leads to the right treatment, the right product, and results
-                  you can trust.
+                  At Medskls Apothecary, our mission is to give you skincare
+                  that actually works—customized for your unique skin and your
+                  real-life routine. This journey begins with understanding you.
+                  Here's how we guide you through a smooth, thoughtful
+                  registration process that leads to the right treatment, the
+                  right product, and results you can trust.
                 </Typography>
               </Stack>
             </StyledMainCard>
@@ -1204,7 +1216,10 @@ const PatientSurveyWithoutLogin = () => {
           {currentStep <= 3 && currentQuestion && (
             <StyledMainCard
               title={
-                <Typography variant="h5" sx={{ color: "#6a1b9a", fontWeight: 600 }}>
+                <Typography
+                  variant="h5"
+                  sx={{ color: "#6a1b9a", fontWeight: 600 }}
+                >
                   {currentStep === 1
                     ? "Tell Us About Your Skin"
                     : currentStep === 2
@@ -1226,12 +1241,19 @@ const PatientSurveyWithoutLogin = () => {
 
               <Box sx={{ mt: 3 }}>
                 <QuestionContainer>
-                  {currentQuestion.QuestionText.toLowerCase().includes("consent") ||
-                  currentQuestion.QuestionText.toLowerCase().includes("agree") ? (
+                  {currentQuestion.QuestionText.toLowerCase().includes(
+                    "consent"
+                  ) ||
+                  currentQuestion.QuestionText.toLowerCase().includes(
+                    "agree"
+                  ) ? (
                     <FormControlLabel
                       control={
                         <StyledCheckbox
-                          checked={formData.consents[currentQuestion.QuestionId] || false}
+                          checked={
+                            formData.consents[currentQuestion.QuestionId] ||
+                            false
+                          }
                           onChange={(e) =>
                             handleConsentChange(
                               currentQuestion.QuestionId,
@@ -1266,7 +1288,10 @@ const PatientSurveyWithoutLogin = () => {
           {currentStep === 4 && (
             <StyledMainCard
               title={
-                <Typography variant="h5" sx={{ color: "#6a1b9a", fontWeight: 600 }}>
+                <Typography
+                  variant="h5"
+                  sx={{ color: "#6a1b9a", fontWeight: 600 }}
+                >
                   What Happens Next?
                 </Typography>
               }
@@ -1285,7 +1310,11 @@ const PatientSurveyWithoutLogin = () => {
                   <Typography
                     key={item}
                     variant="body2"
-                    sx={{ color: "#555", display: "flex", alignItems: "center" }}
+                    sx={{
+                      color: "#555",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
                   >
                     <span
                       style={{
@@ -1305,7 +1334,8 @@ const PatientSurveyWithoutLogin = () => {
                 variant="body2"
                 sx={{ mt: 2, color: "#6a1b9a", fontStyle: "italic" }}
               >
-                Let's begin your journey toward clearer, healthier skin — together.
+                Let's begin your journey toward clearer, healthier skin —
+                together.
               </Typography>
             </StyledMainCard>
           )}
@@ -1339,8 +1369,11 @@ const PatientSurveyWithoutLogin = () => {
                   "&:hover": { backgroundColor: "#7b1fa2" },
                 }}
               >
-                {questionIndex < totalQuestionsInStep - 1 ? "Next Question" : 
-                 currentStep < 3 ? "Continue to Next Section" : "Review Submission"}
+                {questionIndex < totalQuestionsInStep - 1
+                  ? "Next Question"
+                  : currentStep < 3
+                  ? "Continue to Next Section"
+                  : "Review Submission"}
               </NavigationButton>
             ) : (
               <ColorButton
@@ -1350,7 +1383,10 @@ const PatientSurveyWithoutLogin = () => {
               >
                 {isSubmitting ? (
                   <>
-                    <CircularProgress size={24} sx={{ color: "white", mr: 1 }} />
+                    <CircularProgress
+                      size={24}
+                      sx={{ color: "white", mr: 1 }}
+                    />
                     Submitting...
                   </>
                 ) : (
@@ -1367,7 +1403,10 @@ const PatientSurveyWithoutLogin = () => {
                 committed to protecting your personal information.
               </Typography>
               <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
-              <Typography variant="subtitle1" sx={{ color: "#6a1b9a", fontWeight: 500 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ color: "#6a1b9a", fontWeight: 500 }}
+              >
                 How We Use Your Personal Information
               </Typography>
               <Stack spacing={1}>
@@ -1381,7 +1420,11 @@ const PatientSurveyWithoutLogin = () => {
                   <Typography
                     key={index}
                     variant="body2"
-                    sx={{ color: "#555", display: "flex", alignItems: "center" }}
+                    sx={{
+                      color: "#555",
+                      display: "flex",
+                      alignItems: "center",
+                    }}
                   >
                     <span
                       style={{
@@ -1398,12 +1441,15 @@ const PatientSurveyWithoutLogin = () => {
                 ))}
               </Stack>
               <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
-              <Typography variant="subtitle1" sx={{ color: "#6a1b9a", fontWeight: 500 }}>
+              <Typography
+                variant="subtitle1"
+                sx={{ color: "#6a1b9a", fontWeight: 500 }}
+              >
                 What Information Do We Collect?
               </Typography>
               <Typography variant="body2" sx={{ color: "#555" }}>
-                When you sign up or place an order, we may collect your Name, Email,
-                Phone Number, Address, Skin Details, and Photos.
+                When you sign up or place an order, we may collect your Name,
+                Email, Phone Number, Address, Skin Details, and Photos.
               </Typography>
             </StyledMainCard>
           )}
