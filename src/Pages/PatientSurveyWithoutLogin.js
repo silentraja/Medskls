@@ -21,6 +21,7 @@ import {
   Radio,
   FormControl,
   Snackbar,
+  Paper
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { alpha } from "@mui/material/styles";
@@ -224,14 +225,26 @@ const PatientSurveyWithoutLogin = () => {
       questions,
       groupedQuestions,
       currentStep,
-      questionIndex
+      questionIndex,
     };
-    localStorage.setItem('pendingPatientSubmission', JSON.stringify(formDataToSave));
-  }, [formData, specifyTexts, imagePaths, capturedImages, questions, groupedQuestions, currentStep, questionIndex]);
+    localStorage.setItem(
+      "pendingPatientSubmission",
+      JSON.stringify(formDataToSave)
+    );
+  }, [
+    formData,
+    specifyTexts,
+    imagePaths,
+    capturedImages,
+    questions,
+    groupedQuestions,
+    currentStep,
+    questionIndex,
+  ]);
 
   // Load form data from localStorage
   const loadFormDataFromLocalStorage = useCallback(() => {
-    const savedData = localStorage.getItem('pendingPatientSubmission');
+    const savedData = localStorage.getItem("pendingPatientSubmission");
     if (savedData) {
       try {
         const {
@@ -242,7 +255,7 @@ const PatientSurveyWithoutLogin = () => {
           questions: savedQuestions,
           groupedQuestions: savedGroupedQuestions,
           currentStep: savedCurrentStep,
-          questionIndex: savedQuestionIndex
+          questionIndex: savedQuestionIndex,
         } = JSON.parse(savedData);
 
         setFormData(savedFormData);
@@ -252,12 +265,12 @@ const PatientSurveyWithoutLogin = () => {
         setQuestions(savedQuestions);
         setCurrentStep(savedCurrentStep || 1);
         setQuestionIndex(savedQuestionIndex || 0);
-        
-        localStorage.removeItem('pendingPatientSubmission');
+
+        localStorage.removeItem("pendingPatientSubmission");
         return true;
       } catch (err) {
         console.error("Error loading saved form data:", err);
-        localStorage.removeItem('pendingPatientSubmission');
+        localStorage.removeItem("pendingPatientSubmission");
         return false;
       }
     }
@@ -268,9 +281,9 @@ const PatientSurveyWithoutLogin = () => {
     const fetchQuestions = async () => {
       try {
         setLoading(true);
-        
+
         const hasSavedData = loadFormDataFromLocalStorage();
-        
+
         if (!hasSavedData) {
           const response = await questionAPI.getQuestionAndOptionList();
           if (response.data.success) {
@@ -324,7 +337,9 @@ const PatientSurveyWithoutLogin = () => {
 
   useEffect(() => {
     if (user?.UserId) {
-      const pendingSubmission = localStorage.getItem('pendingPatientSubmission');
+      const pendingSubmission = localStorage.getItem(
+        "pendingPatientSubmission"
+      );
       if (pendingSubmission) {
         setOpenConfirmation(true);
       }
@@ -355,7 +370,8 @@ const PatientSurveyWithoutLogin = () => {
         !imagePaths["Side View (Left)"] ||
         !imagePaths["Side View (Right)"]
       ) {
-        errors[currentQuestion.QuestionId] = "Please upload all required images";
+        errors[currentQuestion.QuestionId] =
+          "Please upload all required images";
         isValid = false;
       }
       setValidationErrors(errors);
@@ -397,7 +413,9 @@ const PatientSurveyWithoutLogin = () => {
       currentQuestion.QuestionType === "single_choice" &&
       typeof answer === "number"
     ) {
-      const option = currentQuestion.Options.find((opt) => opt.OptionId === answer);
+      const option = currentQuestion.Options.find(
+        (opt) => opt.OptionId === answer
+      );
       if (
         option &&
         (option.OptionText.includes("(please specify)") ||
@@ -430,7 +448,7 @@ const PatientSurveyWithoutLogin = () => {
 
   const handleNextQuestion = () => {
     const { isValid } = validateCurrentQuestion();
-    
+
     if (isValid) {
       if (questionIndex < totalQuestionsInStep - 1) {
         setQuestionIndex(questionIndex + 1);
@@ -634,7 +652,7 @@ const PatientSurveyWithoutLogin = () => {
 
   const handleSubmitConfirmation = () => {
     const { isValid } = validateCurrentQuestion();
-    
+
     if (isValid) {
       setOpenConfirmation(true);
     } else {
@@ -650,182 +668,185 @@ const PatientSurveyWithoutLogin = () => {
   };
 
   const handleSubmit = async () => {
-  setOpenConfirmation(false);
-  setIsSubmitting(true);
-  setSubmitError(null);
-  setSubmitSuccess(false);
-
-  try {
-    const userId = user?.UserId || parseInt(localStorage.getItem("userId"));
-    if (!userId) {
-      // Save form data to localStorage before redirecting to registration
-      const surveyData = {
-        personalInfo: formData.personalInfo,
-        answers: formData.answers,
-        consents: formData.consents,
-        specifyTexts,
-        imagePaths,
-        questions // Save the questions data too
-      };
-      
-      localStorage.setItem('pendingSurveyData', JSON.stringify(surveyData));
-      navigate('/register', { state: { fromSurvey: true } });
-      return;
-    }
-
-    // Prepare responses array
-    const responses = [];
-
-    // Process each question in groupedQuestions
-    Object.values(groupedQuestions).forEach((question) => {
-      const questionId = question.QuestionId;
-      const answer = formData.answers[questionId];
-
-      // Handle image question (ID 13) separately
-      if (questionId === 13) {
-        responses.push({
-          QuestionId: questionId,
-          OptionId: "39,40,41", // Fixed option IDs for images
-          TextResponse: null,
-          FrontSide: imagePaths["Front View"] || null,
-          LeftSide: imagePaths["Side View (Left)"] || null,
-          RightSide: imagePaths["Side View (Right)"] || null
-        });
-        return;
-      }
-
-      // Skip if no answer for this question
-      if (!answer || (Array.isArray(answer) && answer.length === 0)) {
-        return;
-      }
-
-      // Handle multiple choice questions
-      if (Array.isArray(answer)) {
-        const textResponses = [];
-        const optionIds = [];
-
-        answer.forEach((optionId) => {
-          optionIds.push(optionId);
-          const specifyKey = `${questionId}_${optionId}`;
-          if (specifyTexts[specifyKey]) {
-            textResponses.push(specifyTexts[specifyKey]);
-          }
-        });
-
-        responses.push({
-          QuestionId: questionId,
-          OptionId: optionIds.join(","),
-          TextResponse: textResponses.join("; ") || null,
-          FrontSide: null,
-          LeftSide: null,
-          RightSide: null
-        });
-      } 
-      // Handle single choice questions
-      else if (typeof answer === "number" || typeof answer === "string") {
-        responses.push({
-          QuestionId: questionId,
-          OptionId: answer.toString(),
-          TextResponse: specifyTexts[questionId] || null,
-          FrontSide: null,
-          LeftSide: null,
-          RightSide: null
-        });
-      }
-    });
-
-    // Prepare the final submission data
-    const submissionData = {
-      UserId: userId,
-      Responses: responses
-    };
-
-    // Log the data for debugging (remove in production)
-    console.log("Submitting data:", submissionData);
-
-    // Make the API call
-    const response = await patientAPI.savePatientApplication(submissionData);
-    
-    if (!response.data?.success) {
-      throw new Error(response.data?.message || "Failed to submit application");
-    }
-
-    // Handle success
-    setSubmitSuccess(true);
+    setOpenConfirmation(false);
+    setIsSubmitting(true);
     setSubmitError(null);
-    setSnackbarType("success");
-
-    // Send email notification
-    const patientName = formData.personalInfo.fullName || "New Patient";
-    const template = newPatientSubmissionTemplate(patientName);
-
-    const emailResult = await sendEmailNotification({
-      recipientRoles: ["Physician", "Admin"],
-      subject: template.subject,
-      messageBody: template.messageBody,
-      patientName,
-    });
-
-    if (emailResult.success) {
-      setSnackbarMessage(
-        `Thank you for your submission! ${emailResult.sentCount} doctor(s) notified.`
-      );
-    } else {
-      setSnackbarMessage(
-        "Thank you for your submission! Our team will review your information."
-      );
-    }
-
-    setOpenSnackbar(true);
-    
-    // Reset form
-    setFormData({
-      personalInfo: {
-        fullName: "",
-        dob: "",
-        gender: "",
-        phone: "",
-        email: "",
-        address: "",
-      },
-      answers: {},
-      consents: {},
-    });
-    setSpecifyTexts({});
-    setImagePaths({
-      "Front View": null,
-      "Side View (Left)": null,
-      "Side View (Right)": null,
-    });
-    setCapturedImages({
-      "Front View": null,
-      "Side View (Left)": null,
-      "Side View (Right)": null,
-    });
-
-    // Clear any saved data
-    localStorage.removeItem('pendingPatientSubmission');
-    localStorage.removeItem('pendingSurveyData');
-
-  } catch (err) {
-    console.error("Submission error:", err);
-    setSubmitError(err.message || "Failed to submit application");
     setSubmitSuccess(false);
-    setSnackbarType("error");
-    setSnackbarMessage("Failed to submit application. Please try again.");
-    setOpenSnackbar(true);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+
+    try {
+      const userId = user?.UserId || parseInt(localStorage.getItem("userId"));
+      if (!userId) {
+        // Save form data to localStorage before redirecting to registration
+        const surveyData = {
+          personalInfo: formData.personalInfo,
+          answers: formData.answers,
+          consents: formData.consents,
+          specifyTexts,
+          imagePaths,
+          questions, // Save the questions data too
+        };
+
+        localStorage.setItem("pendingSurveyData", JSON.stringify(surveyData));
+        navigate("/register", { state: { fromSurvey: true } });
+        return;
+      }
+
+      // Prepare responses array
+      const responses = [];
+
+      // Process each question in groupedQuestions
+      Object.values(groupedQuestions).forEach((question) => {
+        const questionId = question.QuestionId;
+        const answer = formData.answers[questionId];
+
+        // Handle image question (ID 13) separately
+        if (questionId === 13) {
+          responses.push({
+            QuestionId: questionId,
+            OptionId: "39,40,41", // Fixed option IDs for images
+            TextResponse: null,
+            FrontSide: imagePaths["Front View"] || null,
+            LeftSide: imagePaths["Side View (Left)"] || null,
+            RightSide: imagePaths["Side View (Right)"] || null,
+          });
+          return;
+        }
+
+        // Skip if no answer for this question
+        if (!answer || (Array.isArray(answer) && answer.length === 0)) {
+          return;
+        }
+
+        // Handle multiple choice questions
+        if (Array.isArray(answer)) {
+          const textResponses = [];
+          const optionIds = [];
+
+          answer.forEach((optionId) => {
+            optionIds.push(optionId);
+            const specifyKey = `${questionId}_${optionId}`;
+            if (specifyTexts[specifyKey]) {
+              textResponses.push(specifyTexts[specifyKey]);
+            }
+          });
+
+          responses.push({
+            QuestionId: questionId,
+            OptionId: optionIds.join(","),
+            TextResponse: textResponses.join("; ") || null,
+            FrontSide: null,
+            LeftSide: null,
+            RightSide: null,
+          });
+        }
+        // Handle single choice questions
+        else if (typeof answer === "number" || typeof answer === "string") {
+          responses.push({
+            QuestionId: questionId,
+            OptionId: answer.toString(),
+            TextResponse: specifyTexts[questionId] || null,
+            FrontSide: null,
+            LeftSide: null,
+            RightSide: null,
+          });
+        }
+      });
+
+      // Prepare the final submission data
+      const submissionData = {
+        UserId: userId,
+        Responses: responses,
+      };
+
+      // Log the data for debugging (remove in production)
+      console.log("Submitting data:", submissionData);
+
+      // Make the API call
+      const response = await patientAPI.savePatientApplication(submissionData);
+
+      if (!response.data?.success) {
+        throw new Error(
+          response.data?.message || "Failed to submit application"
+        );
+      }
+
+      // Handle success
+      setSubmitSuccess(true);
+      setSubmitError(null);
+      setSnackbarType("success");
+
+      // Send email notification
+      const patientName = formData.personalInfo.fullName || "New Patient";
+      const template = newPatientSubmissionTemplate(patientName);
+
+      const emailResult = await sendEmailNotification({
+        recipientRoles: ["Physician", "Admin"],
+        subject: template.subject,
+        messageBody: template.messageBody,
+        patientName,
+      });
+
+      if (emailResult.success) {
+        setSnackbarMessage(
+          `Thank you for your submission! ${emailResult.sentCount} doctor(s) notified.`
+        );
+      } else {
+        setSnackbarMessage(
+          "Thank you for your submission! Our team will review your information."
+        );
+      }
+
+      setOpenSnackbar(true);
+
+      // Reset form
+      setFormData({
+        personalInfo: {
+          fullName: "",
+          dob: "",
+          gender: "",
+          phone: "",
+          email: "",
+          address: "",
+        },
+        answers: {},
+        consents: {},
+      });
+      setSpecifyTexts({});
+      setImagePaths({
+        "Front View": null,
+        "Side View (Left)": null,
+        "Side View (Right)": null,
+      });
+      setCapturedImages({
+        "Front View": null,
+        "Side View (Left)": null,
+        "Side View (Right)": null,
+      });
+
+      // Clear any saved data
+      localStorage.removeItem("pendingPatientSubmission");
+      localStorage.removeItem("pendingSurveyData");
+    } catch (err) {
+      console.error("Submission error:", err);
+      setSubmitError(err.message || "Failed to submit application");
+      setSubmitSuccess(false);
+      setSnackbarType("error");
+      setSnackbarMessage("Failed to submit application. Please try again.");
+      setOpenSnackbar(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const renderQuestionInput = useCallback(
     (question) => {
       const needsSpecifyField = (optionText) => {
-        return /\(please (specify|list|mention)/i.test(optionText) || 
-               optionText.toLowerCase().includes("yes") || 
-               optionText.toLowerCase().includes("other") ||
-               optionText.toLowerCase().includes("any actives");
+        return (
+          /\(please (specify|list|mention)/i.test(optionText) ||
+          optionText.toLowerCase().includes("yes") ||
+          optionText.toLowerCase().includes("other") ||
+          optionText.toLowerCase().includes("any actives")
+        );
       };
 
       if (question.QuestionId === 13) {
@@ -1003,14 +1024,19 @@ const PatientSurveyWithoutLogin = () => {
                               }}
                             />
                           }
-                          label={option.OptionText.replace(/\(please mention.*\)/i, '')}
+                          label={option.OptionText.replace(
+                            /\(please mention.*\)/i,
+                            ""
+                          )}
                         />
                         {shouldShowSpecify && (
                           <MultilineSpecifyField
                             multiline
                             minRows={2}
                             placeholder={
-                              option.OptionText.toLowerCase().includes("any actives")
+                              option.OptionText.toLowerCase().includes(
+                                "any actives"
+                              )
                                 ? "Please mention the product names you're using..."
                                 : "Please specify..."
                             }
@@ -1094,15 +1120,18 @@ const PatientSurveyWithoutLogin = () => {
                         <FormControlLabel
                           value={option.OptionId}
                           control={<Radio size="small" />}
-                          label={option.OptionText.replace(/\(please mention.*\)/i, '')}
+                          label={option.OptionText.replace(
+                            /\(please mention.*\)/i,
+                            ""
+                          )}
                         />
                         {shouldShowSpecify && (
                           <MultilineSpecifyField
                             fullWidth
                             size="small"
                             placeholder={
-                              option.OptionText.toLowerCase().includes("yes") 
-                                ? "Please provide details..." 
+                              option.OptionText.toLowerCase().includes("yes")
+                                ? "Please provide details..."
                                 : "Please specify..."
                             }
                             variant="outlined"
@@ -1141,28 +1170,41 @@ const PatientSurveyWithoutLogin = () => {
   const renderProgressIndicator = () => {
     if (currentStep >= 1 && currentStep <= 3) {
       return (
-        <Box sx={{ width: '100%', mb: 2 }}>
+        <Box sx={{ width: "100%", mb: 2 }}>
           <Typography variant="body2" color="text.secondary" align="center">
-            Question {questionIndex + 1} of {totalQuestionsInStep} in this section
+            Question {questionIndex + 1} of {totalQuestionsInStep} in this
+            section
           </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Box sx={{ width: '100%', bgcolor: '#e0e0e0', borderRadius: 5 }}>
-              <Box 
-                sx={{ 
-                  height: 8, 
-                  bgcolor: '#6a1b9a', 
-                  borderRadius: 5, 
-                  width: `${((questionIndex + 1) / totalQuestionsInStep) * 100}%`,
-                  transition: 'width 0.3s ease'
-                }} 
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box sx={{ width: "100%", bgcolor: "#e0e0e0", borderRadius: 5 }}>
+              <Box
+                sx={{
+                  height: 8,
+                  bgcolor: "#6a1b9a",
+                  borderRadius: 5,
+                  width: `${
+                    ((questionIndex + 1) / totalQuestionsInStep) * 100
+                  }%`,
+                  transition: "width 0.3s ease",
+                }}
               />
             </Box>
             <Typography variant="body2" color="text.secondary">
               {Math.round(((questionIndex + 1) / totalQuestionsInStep) * 100)}%
             </Typography>
           </Box>
-          <Typography variant="caption" display="block" align="center" sx={{ mt: 0.5 }}>
-            Section {currentStep} of 3: {currentStep === 1 ? "Skin Concerns" : currentStep === 2 ? "Lifestyle" : "Consents"}
+          <Typography
+            variant="caption"
+            display="block"
+            align="center"
+            sx={{ mt: 0.5 }}
+          >
+            Section {currentStep} of 3:{" "}
+            {currentStep === 1
+              ? "Skin Concerns"
+              : currentStep === 2
+              ? "Lifestyle"
+              : "Consents"}
           </Typography>
         </Box>
       );
@@ -1170,17 +1212,90 @@ const PatientSurveyWithoutLogin = () => {
     return null;
   };
 
+const SidebarText = () => {
+  // ✅ Define all sections
+  const sections = [
+    {
+      title: "Tell Us About Your Skin",
+      description:
+        "What you're experiencing matters deeply to us. The more we understand your skin's journey, the better we can support it.",
+    },
+    {
+      title: "Your Lifestyle + Habits",
+      description:
+        "Your daily life plays a major role in your skin's health. This part helps us understand what your skin goes through every day.",
+    },
+    {
+      title: "Ready for Your Treatment Plan",
+      description:
+        "We're ready to create your personalized treatment plan. Review your information and let's get started.",
+    },
+  ];
+
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: 3,
+        backgroundColor: "#f9f5ff",
+        borderRadius: 2,
+        height: "fit-content",
+        position: "sticky",
+        top: 20,
+        display: { xs: "none", md: "block" },
+      }}
+    >
+      {sections.map((section, index) => (
+        <Box key={index} sx={{ mb: 3 }}>
+          <Typography
+            variant="h6"
+            sx={{
+              color: "#6a1b9a",
+              fontWeight: 600,
+              mb: 1,
+            }}
+          >
+            {section.title}
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#555" }}>
+            {section.description}
+          </Typography>
+        </Box>
+      ))}
+    </Paper>
+  );
+};
   return (
     <Grid
       container
       spacing={3}
       sx={{
         background: "#fafafa",
-        px: { xs: "16px", sm: "24px" }, // horizontal padding
-        py: { xs: "16px", sm: "24px" }, // vertical padding
+        px: { xs: "16px", sm: "24px" },
+        py: { xs: "16px", sm: "24px" },
+        alignItems: "flex-start",
       }}
     >
-      <Grid item xs={12}>
+      {/* Sidebar Column - only visible on md and up */}
+      <Grid
+        item
+        xs={0} // hidden on xs
+        md={3} // takes 3 columns on md and up
+        sx={{
+          position: "sticky",
+          top: 20,
+          alignSelf: "flex-start",
+        }}
+      >
+      <SidebarText currentStep={currentStep} />
+      </Grid>
+
+      {/* Main Content Column */}
+      <Grid
+        item
+        xs={12} // full width on xs
+        md={9} // takes 9 columns on md and up
+      >
         <Stack sx={{ gap: 3 }}>
           {user?.UserId && localStorage.getItem("pendingPatientSubmission") && (
             <Alert severity="info" sx={{ mb: 2 }}>
