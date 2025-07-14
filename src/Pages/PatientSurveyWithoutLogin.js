@@ -97,6 +97,13 @@ const NavigationButton = styled(Button)(({ theme }) => ({
   textTransform: "none",
 }));
 
+const QuestionContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(0, 3),
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(0, 2),
+  }
+}));
+
 const PatientSurveyWithoutLogin = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -262,7 +269,6 @@ const PatientSurveyWithoutLogin = () => {
       try {
         setLoading(true);
         
-        // First try to load any saved data
         const hasSavedData = loadFormDataFromLocalStorage();
         
         if (!hasSavedData) {
@@ -283,7 +289,8 @@ const PatientSurveyWithoutLogin = () => {
 
               if (
                 q.OptionText.includes("(please specify)") ||
-                q.OptionText.includes("(please list)")
+                q.OptionText.includes("(please list)") ||
+                q.OptionText.includes("(please mention)")
               ) {
                 initialSpecifyTexts[`${q.QuestionId}_${q.OptionId}`] = "";
               }
@@ -315,7 +322,6 @@ const PatientSurveyWithoutLogin = () => {
     fetchQuestions();
   }, [loadFormDataFromLocalStorage]);
 
-  // Check for pending submission when user logs in
   useEffect(() => {
     if (user?.UserId) {
       const pendingSubmission = localStorage.getItem('pendingPatientSubmission');
@@ -378,7 +384,8 @@ const PatientSurveyWithoutLogin = () => {
         if (
           option &&
           (option.OptionText.includes("(please specify)") ||
-            option.OptionText.includes("(please list)")) &&
+            option.OptionText.includes("(please list)") ||
+            option.OptionText.includes("(please mention)")) &&
           !specifyTexts[`${currentQuestion.QuestionId}_${optionId}`]?.trim()
         ) {
           errors[`${currentQuestion.QuestionId}_${optionId}`] =
@@ -394,7 +401,8 @@ const PatientSurveyWithoutLogin = () => {
       if (
         option &&
         (option.OptionText.includes("(please specify)") ||
-          option.OptionText.includes("(please list)")) &&
+          option.OptionText.includes("(please list)") ||
+          option.OptionText.includes("(please mention)")) &&
         !specifyTexts[currentQuestion.QuestionId]?.trim()
       ) {
         errors[currentQuestion.QuestionId] = "Please provide details";
@@ -642,181 +650,187 @@ const PatientSurveyWithoutLogin = () => {
   };
 
   const handleSubmit = async () => {
-    setOpenConfirmation(false);
-    setIsSubmitting(true);
-    setSubmitError(null);
-    setSubmitSuccess(false);
+  setOpenConfirmation(false);
+  setIsSubmitting(true);
+  setSubmitError(null);
+  setSubmitSuccess(false);
 
-    try {
-      const userId = user?.UserId || parseInt(localStorage.getItem("userId"));
-      if (!userId) {
-        // User is not logged in - save data and redirect to register
-        saveFormDataLocally();
-        navigate('/register', {
-          state: {
-            fromSurvey: true,
-            surveyData: {
-              personalInfo: formData.personalInfo
-            }
-          }
+  try {
+    const userId = user?.UserId || parseInt(localStorage.getItem("userId"));
+    if (!userId) {
+      // Save form data to localStorage before redirecting to registration
+      const surveyData = {
+        personalInfo: formData.personalInfo,
+        answers: formData.answers,
+        consents: formData.consents,
+        specifyTexts,
+        imagePaths,
+        questions // Save the questions data too
+      };
+      
+      localStorage.setItem('pendingSurveyData', JSON.stringify(surveyData));
+      navigate('/register', { state: { fromSurvey: true } });
+      return;
+    }
+
+    // Prepare responses array
+    const responses = [];
+
+    // Process each question in groupedQuestions
+    Object.values(groupedQuestions).forEach((question) => {
+      const questionId = question.QuestionId;
+      const answer = formData.answers[questionId];
+
+      // Handle image question (ID 13) separately
+      if (questionId === 13) {
+        responses.push({
+          QuestionId: questionId,
+          OptionId: "39,40,41", // Fixed option IDs for images
+          TextResponse: null,
+          FrontSide: imagePaths["Front View"] || null,
+          LeftSide: imagePaths["Side View (Left)"] || null,
+          RightSide: imagePaths["Side View (Right)"] || null
         });
         return;
       }
 
-      // User is logged in - proceed with submission
-      const responses = [];
-
-      Object.entries(formData.answers).forEach(([questionId, answer]) => {
-        const question = groupedQuestions[questionId];
-        if (!question) return;
-
-        if (parseInt(questionId) === 13) {
-          responses.push({
-            QuestionId: 13,
-            OptionId: [39, 40, 41]
-              .filter((id) => {
-                if (id === 39 && imagePaths["Front View"]) return true;
-                if (id === 40 && imagePaths["Side View (Left)"]) return true;
-                if (id === 41 && imagePaths["Side View (Right)"]) return true;
-                return false;
-              })
-              .join(","),
-            TextResponse: null,
-            FrontSide: imagePaths["Front View"] || null,
-            LeftSide: imagePaths["Side View (Left)"] || null,
-            RightSide: imagePaths["Side View (Right)"] || null,
-          });
-        } else if (Array.isArray(answer) && answer.length > 0) {
-          const textResponses = answer.map((optionId) => {
-            const key = `${questionId}_${optionId}`;
-            const option =
-              question.Options?.find((opt) => opt.OptionId === optionId) || {};
-            const needsSpecify =
-              option.OptionText?.includes("(please specify)") ||
-              option.OptionText?.includes("(please list)");
-
-            return {
-              optionId,
-              text: needsSpecify ? specifyTexts[key] || null : null,
-            };
-          });
-
-          responses.push({
-            QuestionId: parseInt(questionId),
-            OptionId: answer.join(","),
-            TextResponse: textResponses
-              .filter((res) => res.text !== null)
-              .map((res) => res.text)
-              .join("; "),
-            FrontSide: null,
-            LeftSide: null,
-            RightSide: null,
-          });
-        } else if (answer) {
-          const option =
-            question.Options?.find((opt) => opt.OptionId === answer) || {};
-          const needsSpecify =
-            option.OptionText?.includes("(please specify") ||
-            option.OptionText?.includes("(please list)");
-
-          responses.push({
-            QuestionId: parseInt(questionId),
-            OptionId: answer.toString(),
-            TextResponse: needsSpecify
-              ? specifyTexts[questionId] || null
-              : null,
-            FrontSide: null,
-            LeftSide: null,
-            RightSide: null,
-          });
-        }
-      });
-
-      const submissionData = {
-        UserId: userId,
-        Responses: responses.filter(
-          (res) => res.OptionId && res.OptionId.length > 0
-        ),
-      };
-
-      const response = await patientAPI.savePatientApplication(submissionData);
-      if (!response.data?.success) {
-        throw new Error(
-          response.data?.message || "Failed to submit application"
-        );
+      // Skip if no answer for this question
+      if (!answer || (Array.isArray(answer) && answer.length === 0)) {
+        return;
       }
 
-      setSubmitSuccess(true);
-      setSubmitError(null);
-      setSnackbarType("success");
+      // Handle multiple choice questions
+      if (Array.isArray(answer)) {
+        const textResponses = [];
+        const optionIds = [];
 
-      // Send email notification
-      const patientName = formData.personalInfo.fullName || "New Patient";
-      const template = newPatientSubmissionTemplate(patientName);
+        answer.forEach((optionId) => {
+          optionIds.push(optionId);
+          const specifyKey = `${questionId}_${optionId}`;
+          if (specifyTexts[specifyKey]) {
+            textResponses.push(specifyTexts[specifyKey]);
+          }
+        });
 
-      const emailResult = await sendEmailNotification({
-        recipientRoles: ["Physician", "Admin"],
-        subject: template.subject,
-        messageBody: template.messageBody,
-        patientName,
-      });
-
-      if (emailResult.success) {
-        setSnackbarMessage(
-          `Thank you for your submission! ${emailResult.sentCount} doctor(s) notified.`
-        );
-      } else {
-        setSnackbarMessage(
-          "Thank you for your submission! Our team will review your information."
-        );
-        console.warn("Email notification issues:", emailResult.message);
+        responses.push({
+          QuestionId: questionId,
+          OptionId: optionIds.join(","),
+          TextResponse: textResponses.join("; ") || null,
+          FrontSide: null,
+          LeftSide: null,
+          RightSide: null
+        });
+      } 
+      // Handle single choice questions
+      else if (typeof answer === "number" || typeof answer === "string") {
+        responses.push({
+          QuestionId: questionId,
+          OptionId: answer.toString(),
+          TextResponse: specifyTexts[questionId] || null,
+          FrontSide: null,
+          LeftSide: null,
+          RightSide: null
+        });
       }
+    });
 
-      setOpenSnackbar(true);
-      
-      // Clear form after successful submission
-      setFormData({
-        personalInfo: {
-          fullName: "",
-          dob: "",
-          gender: "",
-          phone: "",
-          email: "",
-          address: "",
-        },
-        answers: {},
-        consents: {},
-      });
-      setSpecifyTexts({});
-      setImagePaths({
-        "Front View": null,
-        "Side View (Left)": null,
-        "Side View (Right)": null,
-      });
-      setCapturedImages({
-        "Front View": null,
-        "Side View (Left)": null,
-        "Side View (Right)": null,
-      });
+    // Prepare the final submission data
+    const submissionData = {
+      UserId: userId,
+      Responses: responses
+    };
 
-    } catch (err) {
-      console.error("Submission error:", err);
-      setSubmitError(err.message || "Failed to submit application");
-      setSubmitSuccess(false);
-    } finally {
-      setIsSubmitting(false);
+    // Log the data for debugging (remove in production)
+    console.log("Submitting data:", submissionData);
+
+    // Make the API call
+    const response = await patientAPI.savePatientApplication(submissionData);
+    
+    if (!response.data?.success) {
+      throw new Error(response.data?.message || "Failed to submit application");
     }
-  };
+
+    // Handle success
+    setSubmitSuccess(true);
+    setSubmitError(null);
+    setSnackbarType("success");
+
+    // Send email notification
+    const patientName = formData.personalInfo.fullName || "New Patient";
+    const template = newPatientSubmissionTemplate(patientName);
+
+    const emailResult = await sendEmailNotification({
+      recipientRoles: ["Physician", "Admin"],
+      subject: template.subject,
+      messageBody: template.messageBody,
+      patientName,
+    });
+
+    if (emailResult.success) {
+      setSnackbarMessage(
+        `Thank you for your submission! ${emailResult.sentCount} doctor(s) notified.`
+      );
+    } else {
+      setSnackbarMessage(
+        "Thank you for your submission! Our team will review your information."
+      );
+    }
+
+    setOpenSnackbar(true);
+    
+    // Reset form
+    setFormData({
+      personalInfo: {
+        fullName: "",
+        dob: "",
+        gender: "",
+        phone: "",
+        email: "",
+        address: "",
+      },
+      answers: {},
+      consents: {},
+    });
+    setSpecifyTexts({});
+    setImagePaths({
+      "Front View": null,
+      "Side View (Left)": null,
+      "Side View (Right)": null,
+    });
+    setCapturedImages({
+      "Front View": null,
+      "Side View (Left)": null,
+      "Side View (Right)": null,
+    });
+
+    // Clear any saved data
+    localStorage.removeItem('pendingPatientSubmission');
+    localStorage.removeItem('pendingSurveyData');
+
+  } catch (err) {
+    console.error("Submission error:", err);
+    setSubmitError(err.message || "Failed to submit application");
+    setSubmitSuccess(false);
+    setSnackbarType("error");
+    setSnackbarMessage("Failed to submit application. Please try again.");
+    setOpenSnackbar(true);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const renderQuestionInput = useCallback(
     (question) => {
       const needsSpecifyField = (optionText) => {
-        return /\(please (specify|list)\)/i.test(optionText);
+        return /\(please (specify|list|mention)/i.test(optionText) || 
+               optionText.toLowerCase().includes("yes") || 
+               optionText.toLowerCase().includes("other") ||
+               optionText.toLowerCase().includes("any actives");
       };
 
       if (question.QuestionId === 13) {
         return (
-          <Box
+          <QuestionContainer
             id={`question-${question.QuestionId}`}
             sx={{
               border: validationErrors[question.QuestionId]
@@ -934,14 +948,14 @@ const PatientSurveyWithoutLogin = () => {
                 </Stack>
               )}
             </Stack>
-          </Box>
+          </QuestionContainer>
         );
       }
 
       switch (question.QuestionType) {
         case "multiple_choice":
           return (
-            <Box
+            <QuestionContainer
               id={`question-${question.QuestionId}`}
               sx={{
                 border: validationErrors[question.QuestionId]
@@ -989,13 +1003,17 @@ const PatientSurveyWithoutLogin = () => {
                               }}
                             />
                           }
-                          label={option.OptionText}
+                          label={option.OptionText.replace(/\(please mention.*\)/i, '')}
                         />
                         {shouldShowSpecify && (
                           <MultilineSpecifyField
                             multiline
                             minRows={2}
-                            placeholder="Please specify..."
+                            placeholder={
+                              option.OptionText.toLowerCase().includes("any actives")
+                                ? "Please mention the product names you're using..."
+                                : "Please specify..."
+                            }
                             variant="outlined"
                             value={
                               specifyTexts[
@@ -1025,12 +1043,12 @@ const PatientSurveyWithoutLogin = () => {
                   );
                 })}
               </Grid>
-            </Box>
+            </QuestionContainer>
           );
 
         case "single_choice":
           return (
-            <Box
+            <QuestionContainer
               id={`question-${question.QuestionId}`}
               sx={{
                 border: validationErrors[question.QuestionId]
@@ -1076,13 +1094,17 @@ const PatientSurveyWithoutLogin = () => {
                         <FormControlLabel
                           value={option.OptionId}
                           control={<Radio size="small" />}
-                          label={option.OptionText}
+                          label={option.OptionText.replace(/\(please mention.*\)/i, '')}
                         />
                         {shouldShowSpecify && (
                           <MultilineSpecifyField
                             fullWidth
                             size="small"
-                            placeholder="Please specify..."
+                            placeholder={
+                              option.OptionText.toLowerCase().includes("yes") 
+                                ? "Please provide details..." 
+                                : "Please specify..."
+                            }
                             variant="outlined"
                             value={specifyTexts[question.QuestionId] || ""}
                             onChange={(e) =>
@@ -1100,7 +1122,7 @@ const PatientSurveyWithoutLogin = () => {
                   })}
                 </RadioGroup>
               </FormControl>
-            </Box>
+            </QuestionContainer>
           );
         default:
           return null;
@@ -1148,311 +1170,301 @@ const PatientSurveyWithoutLogin = () => {
     return null;
   };
 
-return (
-  <Grid container spacing={3} sx={{ background: "#fafafa" }}>
-    <Grid item xs={12}>
-      <Stack sx={{ gap: 3 }}>
-        {/* Show alert if returning with saved data */}
-        {user?.UserId && localStorage.getItem('pendingPatientSubmission') && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            We found your saved survey data. Please review and submit.
-          </Alert>
-        )}
-
-        {/* Intro Card - Only shown on first question of first step */}
-        {currentStep === 1 && questionIndex === 0 && (
-          <StyledMainCard
-            title="Patient Onboarding Journey"
-            sx={{ background: "linear-gradient(to right, #ffffff, #f8f5ff)" }}
-          >
-            <Stack sx={{ gap: 2 }}>
-              <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>
-                From Skin Concerns to Personalized Care
-              </Typography>
-              <Typography variant="body1" sx={{ color: "#555" }}>
-                At Medskls Apothecary, our mission is to give you skincare that
-                actually works—customized for your unique skin and your real-life
-                routine. This journey begins with understanding you. Here's how
-                we guide you through a smooth, thoughtful registration process
-                that leads to the right treatment, the right product, and results
-                you can trust.
-              </Typography>
-            </Stack>
-          </StyledMainCard>
-        )}
-
-        {/* Current Question Card */}
-        {currentStep <= 3 && currentQuestion && (
-          <StyledMainCard
-            title={
-              <Typography variant="h5" sx={{ color: "#6a1b9a", fontWeight: 600 }}>
-                {currentStep === 1
-                  ? "Tell Us About Your Skin"
-                  : currentStep === 2
-                  ? "Your Lifestyle + Habits"
-                  : "Ready for Your Treatment Plan"}
-              </Typography>
-            }
-          >
-            {renderProgressIndicator()}
-
-            <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
-              {currentStep === 1 &&
-                "What you're experiencing matters deeply to us. The more we understand your skin's journey, the better we can support it."}
-              {currentStep === 2 &&
-                "Your daily life plays a major role in your skin's health. This part helps us understand what your skin goes through every day."}
-              {currentStep === 3 &&
-                "We're ready to create your personalized treatment plan. Review your information and let's get started."}
-            </Typography>
-
-            <Box sx={{ mt: 3 }}>
-              <Box key={currentQuestion.QuestionId} id={`question-${currentQuestion.QuestionId}`}>
-                {currentQuestion.QuestionText.toLowerCase().includes("consent") ||
-                currentQuestion.QuestionText.toLowerCase().includes("agree") ? (
-                  <FormControlLabel
-                    control={
-                      <StyledCheckbox
-                        checked={formData.consents[currentQuestion.QuestionId] || false}
-                        onChange={(e) =>
-                          handleConsentChange(
-                            currentQuestion.QuestionId,
-                            e.target.checked
-                          )
-                        }
-                      />
-                    }
-                    label={currentQuestion.QuestionText}
-                  />
-                ) : (
-                  <>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 }}
-                    >
-                      {currentQuestion.QuestionText}
-                    </Typography>
-                    {renderQuestionInput(currentQuestion)}
-                  </>
-                )}
-                {validationErrors[currentQuestion.QuestionId] && (
-                  <Typography variant="body2" color="error" sx={{ mt: 1 }}>
-                    {validationErrors[currentQuestion.QuestionId]}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          </StyledMainCard>
-        )}
-
-        {/* Final Step */}
-        {currentStep === 4 && (
-          <StyledMainCard
-            title={
-              <Typography variant="h5" sx={{ color: "#6a1b9a", fontWeight: 600 }}>
-                What Happens Next?
-              </Typography>
-            }
-            sx={{ background: "linear-gradient(to right, #ffffff, #f3e5f5)" }}
-          >
-            <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
-              Once your form is submitted:
-            </Typography>
-            <Stack spacing={1}>
-              {[
-                "Expert dermatology review",
-                "Tailored treatment plan creation",
-                "Product compounding and delivery",
-                "Ongoing support available anytime",
-              ].map((item) => (
-                <Typography
-                  key={item}
-                  variant="body2"
-                  sx={{ color: "#555", display: "flex", alignItems: "center" }}
-                >
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor: "#6a1b9a",
-                      marginRight: 8,
-                    }}
-                  ></span>
-                  {item}
-                </Typography>
-              ))}
-            </Stack>
-            <Typography
-              variant="body2"
-              sx={{ mt: 2, color: "#6a1b9a", fontStyle: "italic" }}
-            >
-              Let's begin your journey toward clearer, healthier skin — together.
-            </Typography>
-          </StyledMainCard>
-        )}
-
-        {/* Navigation Buttons */}
-        <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
-          {currentStep > 1 || questionIndex > 0 ? (
-            <NavigationButton
-              variant="outlined"
-              onClick={handlePreviousQuestion}
-              sx={{
-                color: "#6a1b9a",
-                borderColor: "#6a1b9a",
-                "&:hover": {
-                  backgroundColor: alpha("#6a1b9a", 0.04),
-                  borderColor: "#6a1b9a",
-                },
-              }}
-            >
-              Back
-            </NavigationButton>
-          ) : (
-            <div /> // Empty div for spacing
+  return (
+    <Grid container spacing={3} sx={{ background: "#fafafa" }}>
+      <Grid item xs={12}>
+        <Stack sx={{ gap: 3 }}>
+          {user?.UserId && localStorage.getItem('pendingPatientSubmission') && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              We found your saved survey data. Please review and submit.
+            </Alert>
           )}
 
-          {currentStep < 4 ? (
-            <NavigationButton
-              variant="contained"
-              onClick={handleNextQuestion}
-              sx={{
-                backgroundColor: "#6a1b9a",
-                "&:hover": { backgroundColor: "#7b1fa2" },
-              }}
+          {currentStep === 1 && questionIndex === 0 && (
+            <StyledMainCard
+              title="Patient Onboarding Journey"
+              sx={{ background: "linear-gradient(to right, #ffffff, #f8f5ff)" }}
             >
-              {questionIndex < totalQuestionsInStep - 1 ? "Next Question" : 
-               currentStep < 3 ? "Continue to Next Section" : "Review Submission"}
-            </NavigationButton>
-          ) : (
-            <ColorButton
-              size="small"
-              onClick={handleSubmitConfirmation}
-              disabled={isSubmitting}
+              <Stack sx={{ gap: 2 }}>
+                <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>
+                  From Skin Concerns to Personalized Care
+                </Typography>
+                <Typography variant="body1" sx={{ color: "#555" }}>
+                  At Medskls Apothecary, our mission is to give you skincare that
+                  actually works—customized for your unique skin and your real-life
+                  routine. This journey begins with understanding you. Here's how
+                  we guide you through a smooth, thoughtful registration process
+                  that leads to the right treatment, the right product, and results
+                  you can trust.
+                </Typography>
+              </Stack>
+            </StyledMainCard>
+          )}
+
+          {currentStep <= 3 && currentQuestion && (
+            <StyledMainCard
+              title={
+                <Typography variant="h5" sx={{ color: "#6a1b9a", fontWeight: 600 }}>
+                  {currentStep === 1
+                    ? "Tell Us About Your Skin"
+                    : currentStep === 2
+                    ? "Your Lifestyle + Habits"
+                    : "Ready for Your Treatment Plan"}
+                </Typography>
+              }
             >
-              {isSubmitting ? (
-                <>
-                  <CircularProgress size={24} sx={{ color: "white", mr: 1 }} />
-                  Submitting...
-                </>
-              ) : (
-                "Submit Your Information"
-              )}
-            </ColorButton>
+              {renderProgressIndicator()}
+
+              <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
+                {currentStep === 1 &&
+                  "What you're experiencing matters deeply to us. The more we understand your skin's journey, the better we can support it."}
+                {currentStep === 2 &&
+                  "Your daily life plays a major role in your skin's health. This part helps us understand what your skin goes through every day."}
+                {currentStep === 3 &&
+                  "We're ready to create your personalized treatment plan. Review your information and let's get started."}
+              </Typography>
+
+              <Box sx={{ mt: 3 }}>
+                <QuestionContainer>
+                  {currentQuestion.QuestionText.toLowerCase().includes("consent") ||
+                  currentQuestion.QuestionText.toLowerCase().includes("agree") ? (
+                    <FormControlLabel
+                      control={
+                        <StyledCheckbox
+                          checked={formData.consents[currentQuestion.QuestionId] || false}
+                          onChange={(e) =>
+                            handleConsentChange(
+                              currentQuestion.QuestionId,
+                              e.target.checked
+                            )
+                          }
+                        />
+                      }
+                      label={currentQuestion.QuestionText}
+                    />
+                  ) : (
+                    <>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 }}
+                      >
+                        {currentQuestion.QuestionText}
+                      </Typography>
+                      {renderQuestionInput(currentQuestion)}
+                    </>
+                  )}
+                  {validationErrors[currentQuestion.QuestionId] && (
+                    <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                      {validationErrors[currentQuestion.QuestionId]}
+                    </Typography>
+                  )}
+                </QuestionContainer>
+              </Box>
+            </StyledMainCard>
+          )}
+
+          {currentStep === 4 && (
+            <StyledMainCard
+              title={
+                <Typography variant="h5" sx={{ color: "#6a1b9a", fontWeight: 600 }}>
+                  What Happens Next?
+                </Typography>
+              }
+              sx={{ background: "linear-gradient(to right, #ffffff, #f3e5f5)" }}
+            >
+              <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
+                Once your form is submitted:
+              </Typography>
+              <Stack spacing={1}>
+                {[
+                  "Expert dermatology review",
+                  "Tailored treatment plan creation",
+                  "Product compounding and delivery",
+                  "Ongoing support available anytime",
+                ].map((item) => (
+                  <Typography
+                    key={item}
+                    variant="body2"
+                    sx={{ color: "#555", display: "flex", alignItems: "center" }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor: "#6a1b9a",
+                        marginRight: 8,
+                      }}
+                    ></span>
+                    {item}
+                  </Typography>
+                ))}
+              </Stack>
+              <Typography
+                variant="body2"
+                sx={{ mt: 2, color: "#6a1b9a", fontStyle: "italic" }}
+              >
+                Let's begin your journey toward clearer, healthier skin — together.
+              </Typography>
+            </StyledMainCard>
+          )}
+
+          <Stack direction="row" justifyContent="space-between" sx={{ mt: 2 }}>
+            {currentStep > 1 || questionIndex > 0 ? (
+              <NavigationButton
+                variant="outlined"
+                onClick={handlePreviousQuestion}
+                sx={{
+                  color: "#6a1b9a",
+                  borderColor: "#6a1b9a",
+                  "&:hover": {
+                    backgroundColor: alpha("#6a1b9a", 0.04),
+                    borderColor: "#6a1b9a",
+                  },
+                }}
+              >
+                Back
+              </NavigationButton>
+            ) : (
+              <div />
+            )}
+
+            {currentStep < 4 ? (
+              <NavigationButton
+                variant="contained"
+                onClick={handleNextQuestion}
+                sx={{
+                  backgroundColor: "#6a1b9a",
+                  "&:hover": { backgroundColor: "#7b1fa2" },
+                }}
+              >
+                {questionIndex < totalQuestionsInStep - 1 ? "Next Question" : 
+                 currentStep < 3 ? "Continue to Next Section" : "Review Submission"}
+              </NavigationButton>
+            ) : (
+              <ColorButton
+                size="small"
+                onClick={handleSubmitConfirmation}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <CircularProgress size={24} sx={{ color: "white", mr: 1 }} />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Your Information"
+                )}
+              </ColorButton>
+            )}
+          </Stack>
+
+          {currentStep === 1 && questionIndex === 0 && (
+            <StyledMainCard>
+              <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
+                Your trust means everything to us. At Medskls Apothecary, we're
+                committed to protecting your personal information.
+              </Typography>
+              <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
+              <Typography variant="subtitle1" sx={{ color: "#6a1b9a", fontWeight: 500 }}>
+                How We Use Your Personal Information
+              </Typography>
+              <Stack spacing={1}>
+                {[
+                  "Understand your skin concerns and health history",
+                  "Provide a safe, personalized skincare plan",
+                  "Deliver your products to the right place",
+                  "Keep you updated on orders and product reminders",
+                  "Respond to your queries and support needs",
+                ].map((item, index) => (
+                  <Typography
+                    key={index}
+                    variant="body2"
+                    sx={{ color: "#555", display: "flex", alignItems: "center" }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 6,
+                        height: 6,
+                        borderRadius: "50%",
+                        backgroundColor: "#6a1b9a",
+                        marginRight: 8,
+                      }}
+                    ></span>
+                    {item}
+                  </Typography>
+                ))}
+              </Stack>
+              <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
+              <Typography variant="subtitle1" sx={{ color: "#6a1b9a", fontWeight: 500 }}>
+                What Information Do We Collect?
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#555" }}>
+                When you sign up or place an order, we may collect your Name, Email,
+                Phone Number, Address, Skin Details, and Photos.
+              </Typography>
+            </StyledMainCard>
           )}
         </Stack>
+      </Grid>
 
-        {/* Privacy Card - Only shown on first question of first step */}
-        {currentStep === 1 && questionIndex === 0 && (
-          <StyledMainCard>
-            <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
-              Your trust means everything to us. At Medskls Apothecary, we're
-              committed to protecting your personal information.
-            </Typography>
-            <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
-            <Typography variant="subtitle1" sx={{ color: "#6a1b9a", fontWeight: 500 }}>
-              How We Use Your Personal Information
-            </Typography>
-            <Stack spacing={1}>
-              {[
-                "Understand your skin concerns and health history",
-                "Provide a safe, personalized skincare plan",
-                "Deliver your products to the right place",
-                "Keep you updated on orders and product reminders",
-                "Respond to your queries and support needs",
-              ].map((item, index) => (
-                <Typography
-                  key={index}
-                  variant="body2"
-                  sx={{ color: "#555", display: "flex", alignItems: "center" }}
-                >
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      backgroundColor: "#6a1b9a",
-                      marginRight: 8,
-                    }}
-                  ></span>
-                  {item}
-                </Typography>
-              ))}
-            </Stack>
-            <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
-            <Typography variant="subtitle1" sx={{ color: "#6a1b9a", fontWeight: 500 }}>
-              What Information Do We Collect?
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#555" }}>
-              When you sign up or place an order, we may collect your Name, Email,
-              Phone Number, Address, Skin Details, and Photos.
-            </Typography>
-          </StyledMainCard>
-        )}
-      </Stack>
-    </Grid>
+      <Dialog
+        open={openConfirmation}
+        onClose={handleCloseConfirmation}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title" sx={{ color: "#6a1b9a" }}>
+          Confirm Submission
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Are you sure you want to submit your application? Please review all
+            information before submitting as you won't be able to make changes
+            after submission.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseConfirmation} sx={{ color: "#6a1b9a" }}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            autoFocus
+            sx={{
+              backgroundColor: "#6a1b9a",
+              color: "white",
+              "&:hover": { backgroundColor: "#7b1fa2" },
+            }}
+          >
+            Confirm Submission
+          </Button>
+        </DialogActions>
+      </Dialog>
 
-    {/* Confirmation Dialog */}
-    <Dialog
-      open={openConfirmation}
-      onClose={handleCloseConfirmation}
-      aria-labelledby="alert-dialog-title"
-      aria-describedby="alert-dialog-description"
-    >
-      <DialogTitle id="alert-dialog-title" sx={{ color: "#6a1b9a" }}>
-        Confirm Submission
-      </DialogTitle>
-      <DialogContent>
-        <DialogContentText id="alert-dialog-description">
-          Are you sure you want to submit your application? Please review all
-          information before submitting as you won't be able to make changes
-          after submission.
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleCloseConfirmation} sx={{ color: "#6a1b9a" }}>
-          Cancel
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          autoFocus
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={5000}
+        onClose={() => setOpenSnackbar(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setOpenSnackbar(false)}
+          severity={snackbarType}
           sx={{
-            backgroundColor: "#6a1b9a",
+            width: "100%",
+            backgroundColor: snackbarType === "success" ? "#4caf50" : "#f44336",
             color: "white",
-            "&:hover": { backgroundColor: "#7b1fa2" },
+            "& .MuiAlert-icon": { color: "white" },
           }}
         >
-          Confirm Submission
-        </Button>
-      </DialogActions>
-    </Dialog>
-
-    {/* Snackbar */}
-    <Snackbar
-      open={openSnackbar}
-      autoHideDuration={5000}
-      onClose={() => setOpenSnackbar(false)}
-      anchorOrigin={{ vertical: "top", horizontal: "center" }}
-    >
-      <Alert
-        onClose={() => setOpenSnackbar(false)}
-        severity={snackbarType}
-        sx={{
-          width: "100%",
-          backgroundColor: snackbarType === "success" ? "#4caf50" : "#f44336",
-          color: "white",
-          "& .MuiAlert-icon": { color: "white" },
-        }}
-      >
-        {snackbarMessage}
-      </Alert>
-    </Snackbar>
-  </Grid>
-);
-
-
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Grid>
+  );
 };
 
 export default PatientSurveyWithoutLogin;
