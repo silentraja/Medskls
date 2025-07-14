@@ -1345,15 +1345,6 @@ const SidebarText = () => {
             >
               {renderProgressIndicator()}
 
-              <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
-                {currentStep === 1 &&
-                  "What you're experiencing matters deeply to us. The more we understand your skin's journey, the better we can support it."}
-                {currentStep === 2 &&
-                  "Your daily life plays a major role in your skin's health. This part helps us understand what your skin goes through every day."}
-                {currentStep === 3 &&
-                  "We're ready to create your personalized treatment plan. Review your information and let's get started."}
-              </Typography>
-
               <Box sx={{ mt: 3 }}>
                 <QuestionContainer>
                   {currentQuestion.QuestionText.toLowerCase().includes(
