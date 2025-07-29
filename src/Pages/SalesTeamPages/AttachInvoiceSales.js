@@ -30,6 +30,7 @@ import {
   Stack,
   useTheme,
   Grid,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Search,
@@ -59,6 +60,7 @@ const ROLES = {
 const AttachInvoiceSale = () => {
   const { user } = useAuth();
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -79,9 +81,6 @@ const AttachInvoiceSale = () => {
   const [statusOptions, setStatusOptions] = useState([]);
   const [actionType, setActionType] = useState("approve");
   const [viewFeedbackOpen, setViewFeedbackOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [images, setImages] = useState([]);
 
   const SALES_STATUS = {
     APPROVE: 7,
@@ -120,23 +119,14 @@ const AttachInvoiceSale = () => {
       setLoading(true);
       setError(null);
 
-      console.log("Fetching applications with params:", {
-        RoleID: user.RoleId,
-        UserID: user.UserId,
-      });
-
       const response = await patientAPI.getRoleWiseApplication({
         RoleID: user.RoleId,
         UserID: user.UserId,
       });
 
-      console.log("Raw API response:", response);
-
       if (response.data.success) {
-        console.log("Applications data received:", response.data.data);
         setApplications(response.data.data);
       } else if (response.data.statusCode === "8004") {
-        console.log("No applications found");
         setApplications([]);
       } else {
         throw new Error(
@@ -253,33 +243,19 @@ const AttachInvoiceSale = () => {
           message: "Application status updated successfully",
           severity: "success",
         });
-        const updatedApplications = applications.map((app) =>
-          app.application_id === selectedApp.application_id
-            ? response.data.data[0]
-            : app
-        );
-        setApplications(updatedApplications);
+        fetchApplications();
       } else {
         throw new Error(
           response.data.message || "Failed to update application"
         );
       }
     } catch (err) {
-      await fetchApplications();
-
+      console.error("Error updating status:", err);
       setSnackbar({
         open: true,
-        message: "Application status updated successfully",
-        severity: "success",
+        message: err.message || "Failed to update application status",
+        severity: "error",
       });
-
-      setLoading(false);
-      setDialogOpen(false);
-      setSelectedApp(null);
-      setFeedback("");
-      setFile(null);
-      setFileName("");
-      setFilePath(null);
     } finally {
       setLoading(false);
       setDialogOpen(false);
@@ -326,7 +302,7 @@ const AttachInvoiceSale = () => {
   };
 
   const filteredApplications = applications
-    .filter((app) => app.status_id === 5) // Only show status_id 5
+    .filter((app) => app.status_id === 5)
     .filter((app) => {
       const searchLower = searchTerm.toLowerCase();
       const statusName = getStatusName(app.status_id).toLowerCase();
@@ -347,84 +323,102 @@ const AttachInvoiceSale = () => {
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 4,
           p: 2,
           backgroundColor: "background.paper",
           borderRadius: 2,
           boxShadow: 1,
+          gap: { xs: 2, sm: 0 },
         }}
       >
-        <Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
           <Typography
-            variant="h4"
+            variant={isSmallScreen ? "h6" : "h4"}
             sx={{
               fontWeight: 700,
               color: "primary.main",
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              flexGrow: 1,
             }}
           >
-            <DescriptionIcon fontSize="large" />
+            <DescriptionIcon
+              fontSize={isSmallScreen ? "medium" : "large"}
+              sx={{ mr: 1 }}
+            />
             Sales Applications
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Process and manage sales applications
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Refresh />}
-          onClick={fetchApplications}
-          disabled={loading}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            textTransform: "none",
-            fontWeight: 600,
-          }}
-        >
-          Refresh
-        </Button>
-      </Box>
 
-      <Card elevation={3} sx={{ mb: 4 }}>
-        <CardContent>
-          <Box
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Refresh />}
+            onClick={fetchApplications}
+            disabled={loading}
             sx={{
-              p: 2,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "background.default",
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              "& .MuiButton-startIcon": {
+                mr: { xs: 0, sm: 1 },
+              },
             }}
           >
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Search applications..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <Search sx={{ color: "action.active", mr: 1 }} />
-                ),
-                size: "small",
-              }}
-              sx={{
-                maxWidth: 400,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  backgroundColor: "background.paper",
-                },
-              }}
-            />
-          </Box>
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              Refresh
+            </Box>
+          </Button>
+        </Box>
+      </Box>
 
+      {/* Search Section */}
+      <Paper
+        elevation={3}
+        sx={{
+          borderRadius: 2,
+          overflow: "hidden",
+          mb: 3,
+        }}
+      >
+        <Box
+          sx={{
+            p: { xs: 1, sm: 2 },
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "background.default",
+          }}
+        >
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search applications..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ color: "action.active", mr: 1 }} />,
+              size: "small",
+            }}
+            sx={{
+              maxWidth: { xs: "100%", sm: 400 },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "background.paper",
+              },
+            }}
+          />
+        </Box>
+      </Paper>
+
+      {/* Main Content */}
+      <Card elevation={3} sx={{ mb: 4 }}>
+        <CardContent>
           {loading ? (
             <Box
               sx={{
@@ -464,9 +458,9 @@ const AttachInvoiceSale = () => {
               <Table>
                 <TableHead
                   sx={{
-                    backgroundColor: theme.palette.primary.light,
+                    backgroundColor: "primary.light",
                     "& .MuiTableCell-root": {
-                      color: theme.palette.common.white,
+                      color: "common.white",
                       fontWeight: 600,
                     },
                   }}
@@ -487,7 +481,7 @@ const AttachInvoiceSale = () => {
                         hover
                         sx={{
                           "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
+                            backgroundColor: "action.hover",
                           },
                         }}
                       >
@@ -525,18 +519,10 @@ const AttachInvoiceSale = () => {
                               gap: 1,
                             }}
                           >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              <DateRange color="action" fontSize="small" />
-                              <Typography variant="body2">
-                                {app.SubmittedDate}
-                              </Typography>
-                            </Box>
+                            <DateRange color="action" fontSize="small" />
+                            <Typography variant="body2">
+                              {app.SubmittedDate}
+                            </Typography>
                           </Box>
                         </TableCell>
                         <TableCell>
@@ -547,31 +533,9 @@ const AttachInvoiceSale = () => {
                             sx={{
                               fontWeight: 500,
                               borderRadius: 1,
-                              ...(app.status_id === 1 && {
-                                borderColor: theme.palette.warning.main,
-                                color: theme.palette.warning.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(app.status_id === 2 && {
-                                borderColor: theme.palette.primary.main,
-                                color: theme.palette.primary.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(app.status_id === 5 && {
-                                borderColor: theme.palette.info.main,
-                                color: theme.palette.info.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(app.status_id === 6 && {
-                                borderColor: theme.palette.error.main,
-                                color: theme.palette.error.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(app.status_id === 7 && {
-                                borderColor: theme.palette.success.main,
-                                color: theme.palette.success.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
+                              borderColor: theme.palette[getStatusColor(app.status_id)]?.main,
+                              color: theme.palette[getStatusColor(app.status_id)]?.main,
+                              backgroundColor: "common.white",
                             }}
                           />
                         </TableCell>
@@ -588,11 +552,11 @@ const AttachInvoiceSale = () => {
                                   setViewFeedbackOpen(true);
                                 }}
                                 sx={{
-                                  color: theme.palette.info.main,
+                                  color: "info.main",
                                   backgroundColor: "action.hover",
                                   "&:hover": {
-                                    backgroundColor: theme.palette.info.main,
-                                    color: theme.palette.common.white,
+                                    backgroundColor: "info.main",
+                                    color: "common.white",
                                   },
                                 }}
                               >
@@ -603,11 +567,11 @@ const AttachInvoiceSale = () => {
                               <IconButton
                                 onClick={() => openActionDialog(app, "approve")}
                                 sx={{
-                                  color: theme.palette.success.main,
+                                  color: "success.main",
                                   backgroundColor: "action.hover",
                                   "&:hover": {
-                                    backgroundColor: theme.palette.success.main,
-                                    color: theme.palette.common.white,
+                                    backgroundColor: "success.main",
+                                    color: "common.white",
                                   },
                                 }}
                               >
@@ -618,11 +582,11 @@ const AttachInvoiceSale = () => {
                               <IconButton
                                 onClick={() => openActionDialog(app, "reject")}
                                 sx={{
-                                  color: theme.palette.error.main,
+                                  color: "error.main",
                                   backgroundColor: "action.hover",
                                   "&:hover": {
-                                    backgroundColor: theme.palette.error.main,
-                                    color: theme.palette.common.white,
+                                    backgroundColor: "error.main",
+                                    color: "common.white",
                                   },
                                 }}
                               >
@@ -657,6 +621,7 @@ const AttachInvoiceSale = () => {
         </CardContent>
       </Card>
 
+      {/* Action Dialog */}
       <Dialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -665,17 +630,14 @@ const AttachInvoiceSale = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            overflow: "visible",
           },
         }}
       >
         <DialogTitle
           sx={{
             backgroundColor:
-              actionType === "approve"
-                ? theme.palette.success.main
-                : theme.palette.error.main,
-            color: theme.palette.common.white,
+              actionType === "approve" ? "success.main" : "error.main",
+            color: "common.white",
             fontWeight: 600,
             py: 2,
             display: "flex",
@@ -695,7 +657,7 @@ const AttachInvoiceSale = () => {
         <DialogContent sx={{ py: 3 }}>
           <Box sx={{ m: 2 }}>
             <Grid container spacing={2}>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <Typography>
                   <strong>
                     ID: {selectedApp?.application_id} -{" "}
@@ -703,19 +665,17 @@ const AttachInvoiceSale = () => {
                   </strong>
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <Typography variant="body1">
                   <strong>Title:</strong> {selectedApp?.application_title}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <Typography variant="body1">
-                  <strong>Submitted:</strong>{" "}
-                  {selectedApp?.SubmittedDate &&
-                    new Date(selectedApp.SubmittedDate).toLocaleDateString()}
+                  <strong>Submitted:</strong> {selectedApp?.SubmittedDate}
                 </Typography>
               </Grid>
-              <Grid item xs={6}>
+              <Grid item xs={12} sm={6}>
                 <Typography variant="body1">
                   <strong>Current Status:</strong>
                   <Chip
@@ -724,13 +684,9 @@ const AttachInvoiceSale = () => {
                     size="small"
                     sx={{
                       ml: 1,
-                      borderColor:
-                        theme.palette[getStatusColor(selectedApp?.status_id)]
-                          ?.main,
-                      color:
-                        theme.palette[getStatusColor(selectedApp?.status_id)]
-                          ?.main,
-                      backgroundColor: theme.palette.common.white,
+                      borderColor: theme.palette[getStatusColor(selectedApp?.status_id)]?.main,
+                      color: theme.palette[getStatusColor(selectedApp?.status_id)]?.main,
+                      backgroundColor: "common.white",
                     }}
                   />
                 </Typography>
@@ -754,7 +710,7 @@ const AttachInvoiceSale = () => {
             InputProps={{
               sx: {
                 borderRadius: 2,
-                backgroundColor: theme.palette.background.paper,
+                backgroundColor: "background.paper",
               },
             }}
           />
@@ -765,7 +721,7 @@ const AttachInvoiceSale = () => {
                 border: `1px dashed ${theme.palette.divider}`,
                 borderRadius: 2,
                 p: 2,
-                backgroundColor: theme.palette.background.default,
+                backgroundColor: "background.default",
               }}
             >
               <input
@@ -831,7 +787,7 @@ const AttachInvoiceSale = () => {
             onClick={handleStatusUpdate}
             color={actionType === "approve" ? "success" : "error"}
             variant="contained"
-            disabled={loading || !feedback}
+            disabled={loading || (actionType === "reject" && !feedback)}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -850,7 +806,7 @@ const AttachInvoiceSale = () => {
         </DialogActions>
       </Dialog>
 
-      {/* View All Feedbacks Dialog */}
+      {/* View Feedback Dialog */}
       <Dialog
         open={viewFeedbackOpen}
         onClose={() => setViewFeedbackOpen(false)}
@@ -859,14 +815,13 @@ const AttachInvoiceSale = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            overflow: "hidden",
           },
         }}
       >
         <DialogTitle
           sx={{
-            backgroundColor: theme.palette.info.main,
-            color: theme.palette.common.white,
+            backgroundColor: "info.main",
+            color: "common.white",
             fontWeight: 600,
             py: 2,
             display: "flex",
@@ -890,7 +845,6 @@ const AttachInvoiceSale = () => {
             </Typography>
           </Box>
 
-          {/* Doctor's Feedback Section */}
           <Box sx={{ mb: 4 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Doctor's Feedback
@@ -922,7 +876,7 @@ const AttachInvoiceSale = () => {
                 sx={{
                   mb: 2,
                   "& .MuiOutlinedInput-root": {
-                    backgroundColor: theme.palette.background.default,
+                    backgroundColor: "background.default",
                   },
                 }}
               />
@@ -938,11 +892,7 @@ const AttachInvoiceSale = () => {
                     }
                     sx={{
                       textTransform: "none",
-                      color: theme.palette.info.main,
-                      "&:hover": {
-                        backgroundColor: "transparent",
-                        textDecoration: "underline",
-                      },
+                      color: "info.main",
                     }}
                   >
                     View Prescription
@@ -952,7 +902,6 @@ const AttachInvoiceSale = () => {
             </Card>
           </Box>
 
-          {/* Pharmacist's Feedback Section */}
           <Box sx={{ mb: 2 }}>
             <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
               Pharmacist's Feedback
@@ -986,7 +935,7 @@ const AttachInvoiceSale = () => {
                 sx={{
                   mb: 2,
                   "& .MuiOutlinedInput-root": {
-                    backgroundColor: theme.palette.background.default,
+                    backgroundColor: "background.default",
                   },
                 }}
               />
@@ -1002,11 +951,7 @@ const AttachInvoiceSale = () => {
                     }
                     sx={{
                       textTransform: "none",
-                      color: theme.palette.info.main,
-                      "&:hover": {
-                        backgroundColor: "transparent",
-                        textDecoration: "underline",
-                      },
+                      color: "info.main",
                     }}
                   >
                     View Invoice
@@ -1044,13 +989,10 @@ const AttachInvoiceSale = () => {
             width: "100%",
             borderRadius: 2,
             boxShadow: 3,
-            alignItems: "center",
           }}
           iconMapping={{
-            success: <CheckCircleIcon fontSize="large" />,
-            error: <CancelIcon fontSize="large" />,
-            warning: <HelpOutline fontSize="large" />,
-            info: <HelpOutline fontSize="large" />,
+            success: <CheckCircleIcon fontSize="inherit" />,
+            error: <CancelIcon fontSize="inherit" />,
           }}
         >
           <Typography fontWeight={500}>{snackbar.message}</Typography>

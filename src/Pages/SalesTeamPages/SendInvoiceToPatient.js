@@ -2,28 +2,25 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Container,
-  Card,
-  CardContent,
-  Button,
-  Divider,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
+  TablePagination,
   TextField,
+  IconButton,
+  Tooltip,
   CircularProgress,
   Alert,
   Avatar,
   Chip,
-  TablePagination,
-  useTheme,
   Snackbar,
-  Tooltip,
-  IconButton,
+  Button,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Search,
@@ -54,6 +51,7 @@ const getStatusColor = (statusId) => {
 const SendInvoiceToPatient = () => {
   const { user } = useAuth();
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,10 +64,6 @@ const SendInvoiceToPatient = () => {
     severity: "success",
   });
 
-  const handleCloseSnackbar = () => {
-    setSnackbar((prev) => ({ ...prev, open: false }));
-  };
-
   const fetchInvoices = async () => {
     try {
       setLoading(true);
@@ -81,7 +75,6 @@ const SendInvoiceToPatient = () => {
       });
 
       if (response.data.success) {
-        // Filter for completed applications with payment_receipt
         const paidInvoices = response.data.data.filter(
           (invoice) => invoice.status_id === 7 && invoice.payment_receipt
         );
@@ -92,6 +85,11 @@ const SendInvoiceToPatient = () => {
     } catch (err) {
       console.error("Error fetching invoices:", err);
       setError(err.message || "Failed to fetch invoices");
+      setSnackbar({
+        open: true,
+        message: err.message || "Failed to fetch invoices",
+        severity: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -128,17 +126,10 @@ const SendInvoiceToPatient = () => {
       const receiptUrl = getImageUrl(invoice.payment_receipt);
       const link = document.createElement("a");
       link.href = receiptUrl;
-      link.setAttribute("download", "");
       link.target = "_blank";
-
-      // Set filename
-      const fileName =
+      link.download =
         invoice.payment_receipt.split("/").pop() ||
-        `receipt_${invoice.application_id}.${
-          invoice.payment_receipt.split(".").pop() || "pdf"
-        }`;
-      link.download = fileName;
-
+        `receipt_${invoice.application_id}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -158,6 +149,10 @@ const SendInvoiceToPatient = () => {
     }
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  };
+
   const filteredInvoices = invoices.filter((invoice) => {
     const searchLower = searchTerm.toLowerCase();
     const statusName = getStatusName(invoice.status_id).toLowerCase();
@@ -174,263 +169,278 @@ const SendInvoiceToPatient = () => {
     Math.min(rowsPerPage, filteredInvoices.length - page * rowsPerPage);
 
   return (
-    <Container maxWidth="lg" sx={{ p: 3 }}>
+    <Box sx={{ p: 3 }}>
       {/* Header Section */}
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 4,
           p: 2,
           backgroundColor: "background.paper",
           borderRadius: 2,
           boxShadow: 1,
+          gap: { xs: 2, sm: 0 },
         }}
       >
-        <Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
           <Typography
-            variant="h4"
+            variant={isSmallScreen ? "h6" : "h4"}
             sx={{
               fontWeight: 700,
               color: "primary.main",
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              flexGrow: 1,
             }}
           >
-            <DescriptionIcon fontSize="large" />
+            <DescriptionIcon
+              fontSize={isSmallScreen ? "medium" : "large"}
+              sx={{ mr: 1 }}
+            />
             Patient Invoices
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            View and manage completed patient invoices
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Refresh />}
-          onClick={fetchInvoices}
-          disabled={loading}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            textTransform: "none",
-            fontWeight: 600,
-          }}
-        >
-          Refresh
-        </Button>
-      </Box>
 
-      <Card elevation={3} sx={{ mb: 4 }}>
-        <CardContent>
-          <Box
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Refresh />}
+            onClick={fetchInvoices}
+            disabled={loading}
             sx={{
-              p: 2,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "background.default",
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              textTransform: "none",
+              fontWeight: 600,
+              "& .MuiButton-startIcon": {
+                mr: { xs: 0, sm: 1 },
+              },
             }}
           >
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Search invoices..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <Search sx={{ color: "action.active", mr: 1 }} />
-                ),
-                size: "small",
-              }}
-              sx={{
-                maxWidth: 400,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  backgroundColor: "background.paper",
-                },
-              }}
-            />
-          </Box>
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              Refresh
+            </Box>
+          </Button>
+        </Box>
+      </Box>
 
-          {loading ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: 200,
-              }}
-            >
-              <CircularProgress size={60} />
-            </Box>
-          ) : error ? (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          ) : invoices.length === 0 ? (
-            <Box
-              sx={{
-                textAlign: "center",
-                p: 4,
-                backgroundColor: theme.palette.background.default,
+      {/* Search Section */}
+      <Paper
+        elevation={3}
+        sx={{
+          borderRadius: 2,
+          overflow: "hidden",
+          mb: 3,
+        }}
+      >
+        <Box
+          sx={{
+            p: { xs: 1, sm: 2 },
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "background.default",
+          }}
+        >
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search invoices..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ color: "action.active", mr: 1 }} />,
+              size: "small",
+            }}
+            sx={{
+              maxWidth: { xs: "100%", sm: 400 },
+              "& .MuiOutlinedInput-root": {
                 borderRadius: 2,
-              }}
-            >
-              <Typography variant="h6" color="text.secondary">
-                No paid invoices found
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                Only invoices with payment receipts will appear here
-              </Typography>
-            </Box>
-          ) : (
-            <TableContainer component={Paper} elevation={0}>
-              <Table>
-                <TableHead
-                  sx={{
-                    backgroundColor: theme.palette.primary.light,
-                    "& .MuiTableCell-root": {
-                      color: theme.palette.common.white,
-                      fontWeight: 600,
-                    },
-                  }}
-                >
-                  <TableRow>
-                    <TableCell>Application</TableCell>
-                    <TableCell>Submitted</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="center">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredInvoices
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((invoice) => (
-                      <TableRow
-                        key={invoice.application_id}
-                        hover
-                        sx={{
-                          "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
-                          },
-                        }}
-                      >
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                            }}
-                          >
-                            <Avatar sx={{ bgcolor: "primary.main" }}>
-                              {invoice.FullName?.charAt(0) || "A"}
-                            </Avatar>
-                            <Box>
-                              <Typography fontWeight={600}>
-                                {invoice.application_title ||
-                                  "Untitled Application"}
-                              </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                ID: {invoice.application_id} -{" "}
-                                {invoice.FullName || "N/A"}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <DateRange color="action" fontSize="small" />
-                            <Typography variant="body2">
-                              {invoice.SubmittedDate}
+                backgroundColor: "background.paper",
+              },
+            }}
+          />
+        </Box>
+      </Paper>
+
+      {/* Main Content */}
+      <Paper
+        elevation={3}
+        sx={{
+          borderRadius: 2,
+          overflow: "hidden",
+          mb: 3,
+        }}
+      >
+        {loading ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              minHeight: 200,
+              p: 4,
+            }}
+          >
+            <CircularProgress size={60} />
+          </Box>
+        ) : error ? (
+          <Alert
+            severity="error"
+            sx={{
+              m: 3,
+              borderRadius: 2,
+              boxShadow: 1,
+            }}
+          >
+            {error}
+          </Alert>
+        ) : invoices.length === 0 ? (
+          <Box
+            sx={{
+              textAlign: "center",
+              p: 4,
+              backgroundColor: "background.default",
+              borderRadius: 2,
+            }}
+          >
+            <Typography variant="h6" color="text.secondary">
+              No paid invoices found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Only invoices with payment receipts will appear here
+            </Typography>
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead
+                sx={{
+                  backgroundColor: "primary.light",
+                  "& .MuiTableCell-root": {
+                    color: "common.white",
+                    fontWeight: 600,
+                  },
+                }}
+              >
+                <TableRow>
+                  <TableCell>Application</TableCell>
+                  <TableCell>Submitted</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="center">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredInvoices
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((invoice) => (
+                    <TableRow
+                      key={invoice.application_id}
+                      hover
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                        },
+                      }}
+                    >
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                          }}
+                        >
+                          <Avatar sx={{ bgcolor: "primary.main" }}>
+                            {invoice.FullName?.charAt(0) || "A"}
+                          </Avatar>
+                          <Box>
+                            <Typography fontWeight={600}>
+                              {invoice.application_title ||
+                                "Untitled Application"}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              ID: {invoice.application_id} -{" "}
+                              {invoice.FullName || "N/A"}
                             </Typography>
                           </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            label={getStatusName(invoice.status_id)}
-                            color={getStatusColor(invoice.status_id)}
-                            variant="outlined"
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                          }}
+                        >
+                          <DateRange color="action" fontSize="small" />
+                          <Typography variant="body2">
+                            {invoice.SubmittedDate}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={getStatusName(invoice.status_id)}
+                          color={getStatusColor(invoice.status_id)}
+                          variant="outlined"
+                          sx={{
+                            fontWeight: 500,
+                            borderRadius: 1,
+                            borderColor: theme.palette[getStatusColor(invoice.status_id)]?.main,
+                            color: theme.palette[getStatusColor(invoice.status_id)]?.main,
+                            backgroundColor: "common.white",
+                          }}
+                        />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Download Payment Receipt">
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleDownloadReceipt(invoice)}
                             sx={{
-                              fontWeight: 500,
-                              borderRadius: 1,
-                              ...(invoice.status_id === 1 && {
-                                borderColor: theme.palette.warning.main,
-                                color: theme.palette.warning.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(invoice.status_id === 2 && {
-                                borderColor: theme.palette.primary.main,
-                                color: theme.palette.primary.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(invoice.status_id === 5 && {
-                                borderColor: theme.palette.info.main,
-                                color: theme.palette.info.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(invoice.status_id === 6 && {
-                                borderColor: theme.palette.error.main,
-                                color: theme.palette.error.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
-                              ...(invoice.status_id === 7 && {
-                                borderColor: theme.palette.success.main,
-                                color: theme.palette.success.main,
-                                backgroundColor: theme.palette.common.white,
-                              }),
+                              color: "primary.main",
+                              backgroundColor: "action.hover",
+                              "&:hover": {
+                                backgroundColor: "primary.main",
+                                color: "common.white",
+                              },
                             }}
-                          />
-                        </TableCell>
-                        <TableCell align="center">
-                          <Tooltip title="Download Payment Receipt">
-                            <IconButton
-                              color="primary"
-                              onClick={() => handleDownloadReceipt(invoice)}
-                            >
-                              <PictureAsPdf />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  {emptyRows > 0 && (
-                    <TableRow style={{ height: 73 * emptyRows }}>
-                      <TableCell colSpan={4} />
+                          >
+                            <PictureAsPdf fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={filteredInvoices.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                sx={{
-                  borderTop: `1px solid ${theme.palette.divider}`,
-                }}
-              />
-            </TableContainer>
-          )}
-        </CardContent>
-      </Card>
+                  ))}
+                {emptyRows > 0 && (
+                  <TableRow style={{ height: 73 * emptyRows }}>
+                    <TableCell colSpan={4} />
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <TablePagination
+              rowsPerPageOptions={[5, 10, 25]}
+              component="div"
+              count={filteredInvoices.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={handleChangePage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              sx={{
+                borderTop: `1px solid ${theme.palette.divider}`,
+              }}
+            />
+          </TableContainer>
+        )}
+      </Paper>
+
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -440,12 +450,16 @@ const SendInvoiceToPatient = () => {
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          sx={{
+            width: "100%",
+            borderRadius: 2,
+            boxShadow: 3,
+          }}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 };
 
