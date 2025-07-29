@@ -196,19 +196,25 @@ const UserRoles = () => {
           boxShadow: 1,
         }}
       >
-        <Typography
-          variant="h4"
+        <Box
           sx={{
-            fontWeight: 700,
-            color: "primary.main",
             display: "flex",
             alignItems: "center",
             gap: 1,
+            color: "primary.main",
           }}
         >
           <GroupIcon fontSize="large" />
-          User Roles Management
-        </Typography>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              display: { xs: "none", sm: "block" }, // Hide on extra-small screens
+            }}
+          >
+            User Roles Management
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           color="primary"
