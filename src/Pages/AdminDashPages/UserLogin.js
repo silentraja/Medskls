@@ -261,8 +261,15 @@ const UserLogin = () => {
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
+          sx={{
+            "& .MuiButton-startIcon": {
+              marginRight: { xs: 0, sm: 1 }, // Adjust icon spacing for different screens
+            },
+          }}
         >
-          Add User
+          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+            Add User
+          </Box>
         </PrimaryButton>
       </Box>
 

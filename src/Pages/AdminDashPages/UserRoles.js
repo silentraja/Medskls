@@ -209,7 +209,7 @@ const UserRoles = () => {
             variant="h4"
             sx={{
               fontWeight: 700,
-              display: { xs: "none", sm: "block" }, // Hide on extra-small screens
+              display: "flex", // Hide on extra-small screens
             }}
           >
             User Roles Management
@@ -226,9 +226,15 @@ const UserRoles = () => {
             py: 1,
             textTransform: "none",
             fontWeight: 600,
+            // Adjust icon spacing for responsive behavior
+            "& .MuiButton-startIcon": {
+              marginRight: { xs: 0, sm: 1 }, // No margin on mobile, normal margin on desktop
+            },
           }}
         >
-          Create New Role
+          <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+            Create New Role
+          </Box>
         </Button>
       </Box>
 

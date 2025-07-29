@@ -464,13 +464,14 @@ const AddUser = () => {
               sx={{
                 fontWeight: 700,
                 color: "primary.main",
-                display: "flex",
+                display: "flex", // Hide on xs (mobile)
                 alignItems: "center",
                 gap: 1,
               }}
             >
               User Management
             </Typography>
+
             <Button
               variant="contained"
               color="primary"
@@ -485,10 +486,18 @@ const AddUser = () => {
                 "&:hover": {
                   boxShadow: 3,
                 },
+                "& .MuiButton-startIcon": {
+                  mr: { xs: 0, sm: 1 }, // Adjust icon margin for different screen sizes
+                },
               }}
               onClick={handleAddUser}
             >
-              Add User
+              <Box
+                component="span"
+                sx={{ display: { xs: "none", sm: "inline" } }}
+              >
+                Add User
+              </Box>
             </Button>
           </Box>
 

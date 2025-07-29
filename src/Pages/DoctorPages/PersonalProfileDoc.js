@@ -251,9 +251,27 @@ const PersonalProfileDoc = () => {
                   "&:hover": {
                     backgroundColor: theme.palette.primary.dark,
                   },
+                  // Responsive adjustments
+                  minWidth: "auto", // Allows button to shrink to icon size on mobile
+                  px: { xs: 1, sm: 2 }, // Tighter padding on mobile
+                  "& .MuiButton-startIcon": {
+                    marginRight: { xs: 0, sm: 0.5 }, // Remove right margin on mobile
+                    marginLeft: { xs: -0.5, sm: 0 }, // Slight negative margin to compensate icon padding
+                  },
                 }}
               >
-                Edit Profile
+                <Box
+                  component="span"
+                  sx={{
+                    display: { xs: "none", sm: "inline" },
+                    // Ensures smooth transition when text appears
+                    transition: theme.transitions.create("display", {
+                      duration: theme.transitions.duration.shortest,
+                    }),
+                  }}
+                >
+                  Edit Profile
+                </Box>
               </Button>
             )
           }

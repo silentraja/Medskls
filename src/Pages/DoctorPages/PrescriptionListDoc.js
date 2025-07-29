@@ -482,9 +482,12 @@ const PrescriptionListDoc = () => {
             py: 1,
             textTransform: "none",
             fontWeight: 600,
+            "& .MuiButton-startIcon": {
+              mr: { xs: 0, sm: 0.5 }, // Adjusts icon spacing
+            },
           }}
         >
-          Refresh
+          <span style={{ display: { xs: "none", sm: "inline" } }}>Refresh</span>
         </Button>
       </Box>
 

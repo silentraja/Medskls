@@ -252,9 +252,18 @@ const PersonalProfile = () => {
                   "&:hover": {
                     backgroundColor: theme.palette.primary.dark,
                   },
+                  // Adjust icon spacing for responsive behavior
+                  "& .MuiButton-startIcon": {
+                    marginRight: { xs: 0, sm: 0.5 }, // No margin on mobile, small margin on desktop
+                  },
                 }}
               >
-                Edit Profile
+                <Box
+                  component="span"
+                  sx={{ display: { xs: "none", sm: "inline" } }}
+                >
+                  Edit Profile
+                </Box>
               </Button>
             )
           }

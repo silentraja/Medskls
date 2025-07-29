@@ -81,13 +81,11 @@ const PatientInvoice = () => {
       });
 
       if (response.data.success) {
-        // Filter for completed applications with final_invoice
         const completedApplications = response.data.data.filter(
           (app) => app.status_id === 7 && app.final_invoice
         );
         setInvoices(completedApplications || []);
       } else if (response.data.statusCode === "8004") {
-        // No applications found
         setInvoices([]);
       } else {
         throw new Error(response.data.message || "Failed to fetch invoices");
@@ -110,12 +108,6 @@ const PatientInvoice = () => {
       fetchInvoices();
     }
   }, [user?.UserId, user?.RoleId]);
-
-  useEffect(() => {
-    if (user?.UserId) {
-      fetchInvoices();
-    }
-  }, [user?.UserId]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -144,16 +136,8 @@ const PatientInvoice = () => {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      console.error("No image path provided");
-      return "";
-    }
-
-    // Handle cases where imagePath might already be a full URL
-    if (imagePath.startsWith("http")) {
-      return imagePath;
-    }
-
+    if (!imagePath) return "";
+    if (imagePath.startsWith("http")) return imagePath;
     const baseUrl = "https://portal.medskls.com:441/API";
     return `${baseUrl}${imagePath.startsWith("/") ? "" : "/"}${imagePath}`;
   };
@@ -161,8 +145,6 @@ const PatientInvoice = () => {
   const handleFileUpload = async (file, invoice) => {
     try {
       if (!file) return;
-
-      // Check file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
         setSnackbar({
           open: true,
@@ -182,7 +164,6 @@ const PatientInvoice = () => {
             fileType: file.type,
           };
 
-          // Step 1: Upload the file
           const uploadParams = {
             SubjectName: "PatientReceipts",
             AssignmentTitle: `Receipt_${invoice.application_id}`,
@@ -191,18 +172,10 @@ const PatientInvoice = () => {
           };
 
           const uploadResponse = await UploadEmployeeFiles(uploadParams);
-
-          if (
-            uploadResponse.error ||
-            !uploadResponse.data ||
-            !uploadResponse.data.length
-          ) {
-            throw new Error(
-              uploadResponse.message || "Failed to upload receipt"
-            );
+          if (uploadResponse.error || !uploadResponse.data || !uploadResponse.data.length) {
+            throw new Error(uploadResponse.message || "Failed to upload receipt");
           }
 
-          // Step 2: Update application
           const updateParams = {
             ID: invoice.application_id,
             StatusID: invoice.status_id,
@@ -210,18 +183,11 @@ const PatientInvoice = () => {
             ImagePath: uploadResponse.data[0],
           };
 
-          const updateResponse = await patientAPI.updateUserApplication(
-            updateParams
-          );
-
+          const updateResponse = await patientAPI.updateUserApplication(updateParams);
           if (updateResponse.error || updateResponse.success === false) {
-            throw new Error(
-              updateResponse.message ||
-                "Failed to update application with receipt"
-            );
+            throw new Error(updateResponse.message || "Failed to update application");
           }
 
-          // Show success message
           setSnackbar({
             open: true,
             message: "Receipt uploaded successfully!",
@@ -234,31 +200,17 @@ const PatientInvoice = () => {
           console.error("Error during file read/upload/update:", innerError);
           setSnackbar({
             open: true,
-            message:
-              innerError.message ||
-              "An unexpected error occurred during upload.",
+            message: innerError.message || "An unexpected error occurred during upload.",
             severity: "error",
           });
         }
       };
-
-      reader.onerror = (e) => {
-        console.error("FileReader error:", e);
-        setSnackbar({
-          open: true,
-          message: "Failed to read file. Please try again.",
-          severity: "error",
-        });
-      };
-
       reader.readAsDataURL(file);
     } catch (outerError) {
       console.error("Outer error during upload:", outerError);
       setSnackbar({
         open: true,
-        message:
-          outerError.message ||
-          "An error occurred while uploading the receipt.",
+        message: outerError.message || "An error occurred while uploading the receipt.",
         severity: "error",
       });
     }
@@ -271,19 +223,12 @@ const PatientInvoice = () => {
       }
 
       const invoiceUrl = getImageUrl(invoice.final_invoice);
-
-      // Create a temporary anchor element to trigger the download
       const link = document.createElement("a");
       link.href = invoiceUrl;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-
-      // Extract filename from path or use a default
-      const fileName =
-        invoice.final_invoice.split("/").pop() ||
-        `invoice_${invoice.application_id}.pdf`;
+      const fileName = invoice.final_invoice.split("/").pop() || `invoice_${invoice.application_id}.pdf`;
       link.download = fileName;
-
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -302,55 +247,6 @@ const PatientInvoice = () => {
       });
     }
   };
-
-  // const handleDownload = async (invoice) => {
-  //   try {
-  //     if (!invoice?.final_invoice) {
-  //       throw new Error("No invoice file available for download");
-  //     }
-
-  //     const invoiceUrl = getImageUrl(invoice.final_invoice);
-
-  //     // Fetch the file first
-  //     const response = await fetch(invoiceUrl);
-  //     const blob = await response.blob();
-
-  //     // Create download link
-  //     const url = window.URL.createObjectURL(blob);
-  //     const link = document.createElement("a");
-  //     link.href = url;
-
-  //     // Set filename
-  //     const fileName =
-  //       invoice.final_invoice.split("/").pop() ||
-  //       `invoice_${invoice.application_id}.${
-  //         invoice.final_invoice.split(".").pop() || "pdf"
-  //       }`;
-  //     link.download = fileName;
-
-  //     document.body.appendChild(link);
-  //     link.click();
-
-  //     // Clean up
-  //     setTimeout(() => {
-  //       document.body.removeChild(link);
-  //       window.URL.revokeObjectURL(url);
-  //     }, 100);
-
-  //     setSnackbar({
-  //       open: true,
-  //       message: "Invoice download started",
-  //       severity: "success",
-  //     });
-  //   } catch (err) {
-  //     console.error("Error downloading invoice:", err);
-  //     setSnackbar({
-  //       open: true,
-  //       message: err.message || "Failed to download invoice",
-  //       severity: "error",
-  //     });
-  //   }
-  // };
 
   const handlePayNow = (invoice) => {
     setSelectedInvoice(invoice);
@@ -374,88 +270,137 @@ const PatientInvoice = () => {
 
   return (
     <Container maxWidth="lg" sx={{ p: isSmallScreen ? 1 : 3 }}>
-      {/* Header Section */}
+      {/* Updated Header Section */}
       <Box
         sx={{
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 4,
           p: 2,
           backgroundColor: "background.paper",
           borderRadius: 2,
           boxShadow: 1,
+          gap: { xs: 2, sm: 0 },
         }}
       >
-        <Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
           <Typography
-            variant="h4"
+            variant={isSmallScreen ? "h6" : "h4"}
             sx={{
               fontWeight: 700,
               color: "primary.main",
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              flexGrow: 1,
             }}
           >
-            <DescriptionIcon fontSize="large" />
+            <DescriptionIcon
+              fontSize={isSmallScreen ? "medium" : "large"}
+              sx={{ mr: 1 }}
+            />
             Patient Invoices
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            View and manage your completed medical applications
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Refresh />}
-          onClick={fetchInvoices}
-          disabled={loading}
-          sx={{
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-            textTransform: "none",
-            fontWeight: 600,
-          }}
-        >
-          Refresh
-        </Button>
-      </Box>
-
-      <Card elevation={3} sx={{ mb: 4 }}>
-        <CardContent>
-          <Box
-            sx={{
-              p: 2,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              backgroundColor: "background.default",
+          <Typography 
+            variant="subtitle1" 
+            color="text.secondary"
+            sx={{ 
+              display: { xs: "none", sm: "block" },
+              ml: 1
             }}
           >
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Search invoices..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <Search sx={{ color: "action.active", mr: 1 }} />
-                ),
-                size: "small",
-              }}
+          </Typography>
+
+          {/* Desktop - Full Button */}
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Refresh />}
+              onClick={fetchInvoices}
+              disabled={loading}
               sx={{
-                maxWidth: 400,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 2,
-                  backgroundColor: "background.paper",
-                },
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                fontWeight: 600,
               }}
-            />
+            >
+              Refresh
+            </Button>
           </Box>
 
+          {/* Mobile - Icon Only */}
+          <IconButton
+            sx={{
+              display: { xs: "flex", sm: "none" },
+              color: "common.white",
+              backgroundColor: "primary.light",
+              "&:hover": {
+                backgroundColor: "primary.main",
+                color: "common.white",
+              },
+            }}
+            onClick={fetchInvoices}
+            disabled={loading}
+          >
+            <Refresh />
+          </IconButton>
+        </Box>
+      </Box>
+
+      {/* Updated Search Section */}
+      <Paper
+        elevation={3}
+        sx={{
+          borderRadius: 2,
+          overflow: "hidden",
+          mb: 3,
+          mx: { xs: 0, sm: 0 },
+          width: { xs: "100vw", sm: "auto" },
+          maxWidth: "100%",
+          overflowX: "auto",
+        }}
+      >
+        <Box
+          sx={{
+            p: { xs: 1, sm: 2 },
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "background.default",
+          }}
+        >
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search invoices..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ color: "action.active", mr: 1 }} />,
+              size: "small",
+            }}
+            sx={{
+              maxWidth: { xs: "100%", sm: 400 },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "background.paper",
+              },
+            }}
+          />
+        </Box>
+
+        {/* Table Content */}
+        <TableContainer
+          sx={{
+            px: { xs: 0.5, sm: 2 },
+            width: { xs: "100%", sm: "auto" },
+          }}
+        >
           {!user?.UserId ? (
             <Alert severity="warning" sx={{ mb: 2 }}>
               Please log in to view your applications
@@ -473,45 +418,31 @@ const PatientInvoice = () => {
               No completed applications found
             </Alert>
           ) : (
-            <TableContainer component={Paper} elevation={0}>
-              <Table>
-                <TableHead
-                  sx={{
-                    backgroundColor: theme.palette.primary.light,
-                    "& .MuiTableCell-root": {
-                      color: theme.palette.common.white,
-                      fontWeight: 600,
-                    },
-                  }}
-                >
+            <>
+              <Table sx={{ minWidth: 750 }}>
+                <TableHead sx={{ backgroundColor: "primary.light" }}>
                   <TableRow>
-                    <TableCell>Application</TableCell>
-                    <TableCell>Submitted</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell align="center">Actions</TableCell>
+                    <TableCell sx={{ color: "common.white", fontWeight: 600 }}>
+                      Application
+                    </TableCell>
+                    <TableCell sx={{ color: "common.white", fontWeight: 600 }}>
+                      Submitted
+                    </TableCell>
+                    <TableCell sx={{ color: "common.white", fontWeight: 600 }}>
+                      Status
+                    </TableCell>
+                    <TableCell align="center" sx={{ color: "common.white", fontWeight: 600 }}>
+                      Actions
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {filteredInvoices
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((invoice) => (
-                      <TableRow
-                        key={invoice.application_id}
-                        hover
-                        sx={{
-                          "&:hover": {
-                            backgroundColor: theme.palette.action.hover,
-                          },
-                        }}
-                      >
+                      <TableRow key={invoice.application_id} hover>
                         <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 2,
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                             <Avatar
                               sx={{
                                 bgcolor: "primary.main",
@@ -524,27 +455,16 @@ const PatientInvoice = () => {
                             </Avatar>
                             <Box>
                               <Typography fontWeight={600}>
-                                {invoice.application_title ||
-                                  "Untitled Application"}
+                                {invoice.application_title || "Untitled Application"}
                               </Typography>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                ID: {invoice.application_id} -{" "}
-                                {invoice.FullName || "N/A"}
+                              <Typography variant="body2" color="text.secondary">
+                                ID: {invoice.application_id} - {invoice.FullName || "N/A"}
                               </Typography>
                             </Box>
                           </Box>
                         </TableCell>
                         <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <DateRange color="action" fontSize="small" />
                             <Typography variant="body2">
                               {invoice.SubmittedDate}
@@ -566,11 +486,7 @@ const PatientInvoice = () => {
                           />
                         </TableCell>
                         <TableCell align="center">
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            justifyContent="center"
-                          >
+                          <Stack direction="row" spacing={1} justifyContent="center">
                             <Tooltip title="Download Invoice PDF">
                               <IconButton
                                 color="primary"
@@ -580,7 +496,6 @@ const PatientInvoice = () => {
                                 <PictureAsPdf />
                               </IconButton>
                             </Tooltip>
-
                             <Tooltip title="Make Payment">
                               <IconButton
                                 color="success"
@@ -589,7 +504,6 @@ const PatientInvoice = () => {
                                 <Payment />
                               </IconButton>
                             </Tooltip>
-
                             <Tooltip title="Upload Payment Receipt">
                               <IconButton
                                 color="secondary"
@@ -621,13 +535,12 @@ const PatientInvoice = () => {
                   borderTop: `1px solid ${theme.palette.divider}`,
                 }}
               />
-            </TableContainer>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </TableContainer>
+      </Paper>
 
       {/* Payment Dialog */}
-      {/* Payment Dialog (in PatientInvoice component) */}
       <Dialog
         open={paymentDialogOpen}
         onClose={handleClosePaymentDialog}
@@ -686,14 +599,7 @@ const PatientInvoice = () => {
             )}
           </Box>
         </DialogTitle>
-
-        <DialogContent
-          sx={{
-            p: 0,
-            bgcolor: "background.paper",
-          }}
-        >
-          {/* Invoice Summary Section */}
+        <DialogContent sx={{ p: 0, bgcolor: "background.paper" }}>
           {selectedInvoice && (
             <Box
               sx={{
@@ -706,7 +612,6 @@ const PatientInvoice = () => {
               <Typography variant="subtitle1" fontWeight={600} mb={2}>
                 Invoice Summary
               </Typography>
-
               <Grid container spacing={1}>
                 <Grid item xs={12} sm={6}>
                   <Box>
@@ -721,8 +626,6 @@ const PatientInvoice = () => {
               </Grid>
             </Box>
           )}
-
-          {/* Payment Component */}
           <Box sx={{ p: 3 }}>
             <PaymentPatient
               invoice={selectedInvoice}
@@ -748,7 +651,6 @@ const PatientInvoice = () => {
           </Box>
         </DialogTitle>
         <DialogContent sx={{ p: 3 }}>
-          {/* Always show invoice details at the top */}
           {selectedInvoice && (
             <Box
               sx={{
