@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import * as XLSX from "xlsx"; // Add this import
+import * as XLSX from "xlsx";
 import {
   Box,
   Typography,
@@ -34,6 +34,7 @@ import {
   CardContent,
   Divider,
   InputAdornment,
+  useMediaQuery,
 } from "@mui/material";
 import {
   Add,
@@ -51,7 +52,8 @@ import {
   Cancel as CancelIcon,
   CheckCircle as CheckCircleIcon,
   CheckCircleOutline,
-  FileDownload as FileDownloadIcon, // Add this icon
+  FileDownload as FileDownloadIcon,
+  Description as DescriptionIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../Context/AuthContext";
 import { authService, userService } from "../../Context/authService";
@@ -73,17 +75,16 @@ const roles = [
   { id: 24, name: "Pharmacist", description: "Medication management" },
 ];
 
-// Custom role colors
 const roleColors = {
-  1: { bg: "#e3f2fd", text: "#1565c0" }, // User - blue
-  2: { bg: "#fce4ec", text: "#ad1457" }, // Admin - pink
-  18: { bg: "#e8f5e9", text: "#2e7d32" }, // Inventory Manager - green
-  19: { bg: "#fff3e0", text: "#e65100" }, // Physician - orange
-  20: { bg: "#f3e5f5", text: "#7b1fa2" }, // Nurse - purple
-  21: { bg: "#e0f7fa", text: "#00838f" }, // Lab Tech - cyan
-  22: { bg: "#fff8e1", text: "#ff8f00" }, // Front Desk - amber
-  23: { bg: "#f1f8e9", text: "#558b2f" }, // Billing - light green
-  24: { bg: "#e8eaf6", text: "#3949ab" }, // Pharmacist - indigo
+  1: { bg: "#e3f2fd", text: "#1565c0" },
+  2: { bg: "#fce4ec", text: "#ad1457" },
+  18: { bg: "#e8f5e9", text: "#2e7d32" },
+  19: { bg: "#fff3e0", text: "#e65100" },
+  20: { bg: "#f3e5f5", text: "#7b1fa2" },
+  21: { bg: "#e0f7fa", text: "#00838f" },
+  22: { bg: "#fff8e1", text: "#ff8f00" },
+  23: { bg: "#f1f8e9", text: "#558b2f" },
+  24: { bg: "#e8eaf6", text: "#3949ab" },
 };
 
 const StatusChip = styled(Chip)(({ theme, status }) => ({
@@ -104,6 +105,7 @@ const StatusChip = styled(Chip)(({ theme, status }) => ({
 
 const AddUser = () => {
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -133,7 +135,6 @@ const AddUser = () => {
   const [decrypting, setDecrypting] = useState({});
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
-  // Fetch users function remains the same
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -153,7 +154,6 @@ const AddUser = () => {
             PasswordHash: user.PasswordHash || "",
           }));
 
-          console.log("Formatted Users:", formattedUsers);
           setUsers(formattedUsers);
           const initialVisibility = {};
           response.data.data.forEach((u) => {
@@ -178,11 +178,7 @@ const AddUser = () => {
     fetchUsers();
   }, []);
 
-  // Add this function to handle Excel export
   const exportToExcel = () => {
-    console.log("Exporting all users:", users); // Debug log
-
-    // Prepare the data for export
     const exportData = users.map((user) => {
       return {
         "User ID": user.UserId,
@@ -194,26 +190,16 @@ const AddUser = () => {
       };
     });
 
-    console.log("Export Data:", exportData); // Debug log
-
-    // Create a new workbook
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(exportData);
-
-    // Add worksheet to workbook
     XLSX.utils.book_append_sheet(wb, ws, "Users");
-
-    // Generate Excel file and trigger download
     XLSX.writeFile(
       wb,
       `users_export_${new Date().toISOString().split("T")[0]}.xlsx`
     );
   };
 
-  // Add this function for filtered export
   const exportFilteredToExcel = () => {
-    console.log("Exporting filtered users:", filteredUsers); // Debug log
-
     const exportData = filteredUsers.map((user) => {
       return {
         "User ID": user.UserId,
@@ -224,8 +210,6 @@ const AddUser = () => {
         Status: user.AccountStatus,
       };
     });
-
-    console.log("Filtered Export Data:", exportData); // Debug log
 
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -245,99 +229,6 @@ const AddUser = () => {
     setPage(0);
   };
 
-  const togglePasswordVisibility = (userId) => {
-    setShowPasswords((prev) => ({
-      ...prev,
-      [userId]: !prev[userId],
-    }));
-  };
-
-  const getDecryptedPassword = async (userId, encryptedPassword) => {
-    if (decryptedPasswords[userId]) return;
-
-    try {
-      setDecrypting((prev) => ({ ...prev, [userId]: true }));
-      const response = await userService.getDecryptedPassword(
-        encryptedPassword
-      );
-
-      if (response.data?.success) {
-        setDecryptedPasswords((prev) => ({
-          ...prev,
-          [userId]: response.data.data || "Decryption failed",
-        }));
-      } else {
-        setError(response.data?.message || "Failed to decrypt password");
-      }
-    } catch (err) {
-      console.error("Error decrypting password:", err);
-      setError(err.message || "Failed to decrypt password");
-    } finally {
-      setDecrypting((prev) => ({ ...prev, [userId]: false }));
-    }
-  };
-
-  const startPasswordEdit = (userId) => {
-    setEditingPasswordId(userId);
-    setEditPassword("");
-    setError(null);
-    setPasswordSuccess(false);
-  };
-
-  const cancelPasswordEdit = () => {
-    setEditingPasswordId(null);
-    setEditPassword("");
-  };
-
-  const handlePasswordChange = (e) => {
-    setEditPassword(e.target.value);
-  };
-
-  const savePassword = async (userId) => {
-    if (!editPassword) {
-      setError("Password cannot be empty");
-      return;
-    }
-
-    if (editPassword.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await userService.updatePassword(userId, editPassword);
-
-      if (
-        response.data?.success ||
-        response.data?.data?.[0]?.Mesg === "Updated"
-      ) {
-        setUsers((prevUsers) =>
-          prevUsers.map((u) =>
-            u.UserId === userId ? { ...u, PasswordHash: "••••••••" } : u
-          )
-        );
-        setEditingPasswordId(null);
-        setEditPassword("");
-        setPasswordSuccess(true);
-        setDecryptedPasswords((prev) => ({ ...prev, [userId]: undefined }));
-      } else {
-        setError(response.data?.message || "Failed to update password");
-      }
-    } catch (err) {
-      console.error("Error updating password:", err);
-      setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Failed to update password"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const filteredUsers = users.filter((user) => {
     const searchLower = searchTerm.toLowerCase();
     return (
@@ -355,10 +246,6 @@ const AddUser = () => {
   const handleEditUser = (userId) => {
     setSelectedUserId(userId);
     setOpenEditDialog(true);
-  };
-
-  const handleDeleteUser = (userId) => {
-    console.log("Delete user with ID:", userId);
   };
 
   const handleAddUser = () => {
@@ -440,475 +327,375 @@ const AddUser = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Card
+      {/* Header Section */}
+      <Box
         sx={{
-          borderRadius: 4,
-          boxShadow: 3,
-          overflow: "hidden",
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
           mb: 4,
+          p: 2,
+          backgroundColor: "background.paper",
+          borderRadius: 2,
+          boxShadow: 1,
+          gap: { xs: 2, sm: 0 },
         }}
       >
-        <CardContent sx={{ p: 0 }}>
-          <Box
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "100%" }}>
+          <Typography
+            variant={isSmallScreen ? "h6" : "h4"}
             sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              p: 2,
-              backgroundColor: "background.paper",
-              boxShadow: 1,
+              fontWeight: 700,
+              color: "primary.main",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              flexGrow: 1,
             }}
           >
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 700,
-                color: "primary.main",
-                display: "flex", // Hide on xs (mobile)
-                alignItems: "center",
-                gap: 1,
-              }}
-            >
-              User Management
-            </Typography>
+            <DescriptionIcon
+              fontSize={isSmallScreen ? "medium" : "large"}
+              sx={{ mr: 1 }}
+            />
+            User Management
+          </Typography>
 
+          {/* Desktop - Full Button */}
+          <Box sx={{ display: { xs: "none", sm: "block" } }}>
             <Button
               variant="contained"
               color="primary"
               startIcon={<Add />}
-              sx={{
-                ml: 2,
-                px: 3,
-                fontWeight: 600,
-                borderRadius: 2,
-                textTransform: "none",
-                boxShadow: 1,
-                "&:hover": {
-                  boxShadow: 3,
-                },
-                "& .MuiButton-startIcon": {
-                  mr: { xs: 0, sm: 1 }, // Adjust icon margin for different screen sizes
-                },
-              }}
               onClick={handleAddUser}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                fontWeight: 600,
+              }}
             >
-              <Box
-                component="span"
-                sx={{ display: { xs: "none", sm: "inline" } }}
-              >
-                Add User
-              </Box>
+              Add User
             </Button>
           </Box>
 
-          <Divider sx={{ my: 0 }} />
-
-          {/* Statistics Card - Top Section */}
-          <Box
+          {/* Mobile - Icon Only */}
+          <IconButton
             sx={{
-              p: 3,
-              backgroundColor: "background.paper",
+              display: { xs: "flex", sm: "none" },
+              color: "common.white",
+              backgroundColor: "primary.light",
+              "&:hover": {
+                backgroundColor: "primary.main",
+                color: "common.white",
+              },
+            }}
+            onClick={handleAddUser}
+          >
+            <Add />
+          </IconButton>
+        </Box>
+      </Box>
+
+      {/* Statistics Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={4}>
+          <Card
+            sx={{
+              textAlign: "center",
+              p: 2,
+              borderRadius: 2,
+              boxShadow: 3,
+              height: "100%",
             }}
           >
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={4}>
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    p: 2,
-                    borderRadius: 2,
-                    backgroundColor: "background.default",
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Total Users
-                  </Typography>
-                  <Typography variant="h3" color="primary" fontWeight={600}>
-                    {users.length}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    p: 2,
-                    borderRadius: 2,
-                    backgroundColor: "background.default",
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Active Users
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    color="success.main"
-                    fontWeight={600}
-                  >
-                    {users.filter((u) => u.AccountStatus === "Active").length}
-                  </Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    p: 2,
-                    borderRadius: 2,
-                    backgroundColor: "background.default",
-                  }}
-                >
-                  <Typography variant="h6" color="text.secondary" gutterBottom>
-                    Admin Users
-                  </Typography>
-                  <Typography
-                    variant="h3"
-                    color="secondary.main"
-                    fontWeight={600}
-                  >
-                    {users.filter((u) => u.RoleID === 2).length}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-          </Box>
-        </CardContent>
-      </Card>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Total Users
+            </Typography>
+            <Typography variant="h3" color="primary" fontWeight={600}>
+              {users.length}
+            </Typography>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card
+            sx={{
+              textAlign: "center",
+              p: 2,
+              borderRadius: 2,
+              boxShadow: 3,
+              height: "100%",
+            }}
+          >
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Active Users
+            </Typography>
+            <Typography variant="h3" color="success.main" fontWeight={600}>
+              {users.filter((u) => u.AccountStatus === "Active").length}
+            </Typography>
+          </Card>
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Card
+            sx={{
+              textAlign: "center",
+              p: 2,
+              borderRadius: 2,
+              boxShadow: 3,
+              height: "100%",
+            }}
+          >
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Admin Users
+            </Typography>
+            <Typography variant="h3" color="secondary.main" fontWeight={600}>
+              {users.filter((u) => u.RoleID === 2).length}
+            </Typography>
+          </Card>
+        </Grid>
+      </Grid>
 
-      {/* Main User Table */}
-      <Card
+      {/* Main Table Section */}
+      <Paper
+        elevation={3}
         sx={{
-          borderRadius: 4,
-          boxShadow: 3,
+          borderRadius: 2,
           overflow: "hidden",
+          mb: 3,
         }}
       >
-        <CardContent sx={{ p: 0 }}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              p: 2,
-            }}
-          >
-            <Typography
-              variant="h5"
-              fontWeight={600}
-              sx={{ color: "primary.main" }}
-            >
-              User List
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Tooltip title="Export Users to Excel">
-                <IconButton
-                  onClick={exportFilteredToExcel}
-                  disabled={users.length === 0}
-                  sx={{
-                    backgroundColor: "success.main",
-                    color: "common.white",
-                    "&:hover": {
-                      backgroundColor: "success.dark",
-                    },
-                    borderRadius: 1.5,
-                  }}
-                >
-                  <FileDownloadIcon />
-                </IconButton>
-              </Tooltip>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<Refresh />}
-                onClick={fetchUsers}
-                disabled={loading}
+        <Box
+          sx={{
+            p: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "background.paper",
+          }}
+        >
+          <Typography variant="h5" fontWeight={600} color="primary.main">
+            User List
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Tooltip title="Export Users to Excel">
+              <IconButton
+                onClick={exportFilteredToExcel}
+                disabled={users.length === 0}
                 sx={{
-                  borderRadius: 2,
-                  px: 3,
-                  py: 1,
-                  textTransform: "none",
-                  fontWeight: 600,
+                  backgroundColor: "success.main",
+                  color: "common.white",
+                  "&:hover": { backgroundColor: "success.dark" },
+                  borderRadius: 1.5,
                 }}
               >
-                Refresh
-              </Button>
-            </Box>
+                <FileDownloadIcon />
+              </IconButton>
+            </Tooltip>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Refresh />}
+              onClick={fetchUsers}
+              disabled={loading}
+              sx={{
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              Refresh
+            </Button>
           </Box>
+        </Box>
 
-          <Box sx={{ p: 3 }}>
-            <TextField
-              variant="outlined"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              size="small"
+        <Box
+          sx={{
+            p: { xs: 1, sm: 2 },
+            backgroundColor: "background.default",
+          }}
+        >
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Search users..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: <Search sx={{ color: "action.active", mr: 1 }} />,
+              size: "small",
+            }}
+            sx={{
+              maxWidth: { xs: "100%", sm: 400 },
+              mb: 3,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+                backgroundColor: "background.paper",
+              },
+            }}
+          />
+
+          {loading && users.length === 0 ? (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                p: 4,
+                border: "1px dashed",
+                borderColor: "divider",
+                borderRadius: 2,
+              }}
+            >
+              <CircularProgress size={50} />
+              <Typography variant="h6" sx={{ ml: 3 }}>
+                Loading user data...
+              </Typography>
+            </Box>
+          ) : error ? (
+            <Alert
+              severity="error"
               sx={{
                 mb: 3,
-                width: "35%", // Takes 70% of parent width
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search sx={{ color: "action.active" }} />
-                  </InputAdornment>
-                ),
-                sx: { borderRadius: 2 },
-              }}
-            />
-
-            {loading && users.length === 0 ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  p: 4,
-                  border: "1px dashed",
-                  borderColor: "divider",
-                  borderRadius: 2,
-                }}
-              >
-                <CircularProgress size={50} />
-                <Typography variant="h6" sx={{ ml: 3 }}>
-                  Loading user data...
-                </Typography>
-              </Box>
-            ) : error ? (
-              <Alert
-                severity="error"
-                sx={{
-                  mb: 3,
-                  borderRadius: 2,
-                  boxShadow: 1,
-                }}
-                icon={<CancelIcon fontSize="inherit" />}
-              >
-                <Typography variant="h6">{error}</Typography>
-                <Button
-                  variant="contained"
-                  color="error"
-                  sx={{
-                    mt: 2,
-                    borderRadius: 2,
-                    px: 3,
-                  }}
-                  onClick={fetchUsers}
-                >
-                  Retry
-                </Button>
-              </Alert>
-            ) : (
-              <TableContainer component={Paper} elevation={0}>
-                <Table>
-                  <TableHead
-                    sx={{
-                      backgroundColor: "primary.light",
-                      "& .MuiTableCell-root": {
-                        color: "white",
-                        fontWeight: 700,
-                        fontSize: "0.95rem",
-                      },
-                    }}
-                  >
-                    <TableRow>
-                      <TableCell>Username</TableCell>
-                      <TableCell>Email</TableCell>
-                      <TableCell>Role</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell>Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredUsers
-                      .slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
-                      .map((user) => (
-                        <TableRow
-                          key={user.UserId}
-                          hover
-                          sx={{
-                            "&:last-child td, &:last-child th": { border: 0 },
-                            "&:hover": {
-                              backgroundColor: "action.hover",
-                            },
-                          }}
-                        >
-                          {/* Username Cell - Now includes User ID */}
-                          <TableCell
-                            sx={{
-                              borderBottom: `1px solid ${theme.palette.divider}`,
-                            }}
-                          >
-                            <Box display="flex" alignItems="center" gap={2}>
-                              <Avatar
-                                sx={{
-                                  bgcolor: theme.palette.primary.main,
-                                  width: 40,
-                                  height: 40,
-                                }}
-                              >
-                                {user.Username?.charAt(0) || "U"}
-                              </Avatar>
-                              <Box display="flex" flexDirection="column">
-                                <Typography
-                                  variant="body1"
-                                  fontWeight={500}
-                                  fontSize="1rem"
-                                >
-                                  {user.Username}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  color="text.secondary"
-                                >
-                                  ID: {user.UserId}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </TableCell>
-
-                          {/* Email Cell */}
-                          <TableCell
-                            sx={{
-                              borderBottom: `1px solid ${theme.palette.divider}`,
-                            }}
-                          >
-                            <Box sx={{ display: "flex", alignItems: "center" }}>
-                              <EmailIcon color="action" sx={{ mr: 1 }} />
-                              <Typography variant="body2">
-                                {user.Email}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-
-                          {/* Role Cell */}
-                          <TableCell
-                            sx={{
-                              borderBottom: `1px solid ${theme.palette.divider}`,
-                            }}
-                          >
-                            <Chip
-                              label={user.RoleName}
-                              sx={{
-                                backgroundColor:
-                                  roleColors[user.RoleID]?.bg || "#f5f5f5",
-                                color:
-                                  roleColors[user.RoleID]?.text || "#616161",
-                                fontWeight: 600,
-                                minWidth: 100,
-                              }}
-                            />
-                          </TableCell>
-
-                          {/* Status Cell - Updated to use AccountStatus */}
-                          <TableCell
-                            sx={{
-                              borderBottom: `1px solid ${theme.palette.divider}`,
-                            }}
-                          >
-                            <StatusChip
-                              status={user.AccountStatus} // Fixed the typo here
-                              label={user.AccountStatus}
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Box sx={{ display: "flex", gap: 1 }}>
-                              {editingPasswordId === user.UserId ? (
-                                <>
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="primary"
-                                    onClick={() => savePassword(user.UserId)}
-                                    disabled={loading}
-                                    startIcon={<SaveIcon />}
-                                    sx={{
-                                      borderRadius: 2,
-                                      textTransform: "none",
-                                      px: 2,
-                                    }}
-                                  >
-                                    Save
-                                  </Button>
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="error"
-                                    onClick={cancelPasswordEdit}
-                                    disabled={loading}
-                                    sx={{
-                                      borderRadius: 2,
-                                      textTransform: "none",
-                                      px: 2,
-                                    }}
-                                  >
-                                    Cancel
-                                  </Button>
-                                </>
-                              ) : (
-                                <>
-                                  <Tooltip title="Edit">
-                                    <IconButton
-                                      color="primary"
-                                      onClick={() =>
-                                        handleEditUser(user.UserId)
-                                      }
-                                      sx={{
-                                        backgroundColor: "action.hover",
-                                        "&:hover": {
-                                          backgroundColor: "primary.light",
-                                          color: "common.white",
-                                        },
-                                      }}
-                                    >
-                                      <Edit fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                </>
-                              )}
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    {emptyRows > 0 && (
-                      <TableRow style={{ height: 53 * emptyRows }}>
-                        <TableCell colSpan={5} />
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                <TablePagination
-                  rowsPerPageOptions={[5, 10, 25]}
-                  component="div"
-                  count={filteredUsers.length}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  onPageChange={handleChangePage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                  sx={{ borderTop: "1px solid", borderColor: "divider" }}
-                />
-              </TableContainer>
-            )}
-          </Box>
-
-          {passwordSuccess && (
-            <Alert
-              severity="success"
-              sx={{
-                m: 3,
                 borderRadius: 2,
                 boxShadow: 1,
               }}
-              icon={<CheckCircleIcon fontSize="inherit" />}
+              icon={<CancelIcon fontSize="inherit" />}
             >
-              Password updated successfully!
+              <Typography variant="h6">{error}</Typography>
+              <Button
+                variant="contained"
+                color="error"
+                sx={{
+                  mt: 2,
+                  borderRadius: 2,
+                  px: 3,
+                }}
+                onClick={fetchUsers}
+              >
+                Retry
+              </Button>
             </Alert>
+          ) : (
+            <TableContainer>
+              <Table>
+                <TableHead
+                  sx={{
+                    backgroundColor: "primary.light",
+                    "& .MuiTableCell-root": {
+                      color: "common.white",
+                      fontWeight: 600,
+                    },
+                  }}
+                >
+                  <TableRow>
+                    <TableCell>Username</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredUsers
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((user) => (
+                      <TableRow key={user.UserId} hover>
+                        <TableCell>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Avatar
+                              sx={{
+                                bgcolor: theme.palette.primary.main,
+                                width: 40,
+                                height: 40,
+                              }}
+                            >
+                              {user.Username?.charAt(0) || "U"}
+                            </Avatar>
+                            <Box display="flex" flexDirection="column">
+                              <Typography variant="body1" fontWeight={500}>
+                                {user.Username}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                ID: {user.UserId}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", alignItems: "center" }}>
+                            <EmailIcon color="action" sx={{ mr: 1 }} />
+                            <Typography variant="body2">
+                              {user.Email}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={user.RoleName}
+                            sx={{
+                              backgroundColor:
+                                roleColors[user.RoleID]?.bg || "#f5f5f5",
+                              color:
+                                roleColors[user.RoleID]?.text || "#616161",
+                              fontWeight: 600,
+                              minWidth: 100,
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <StatusChip
+                            status={user.AccountStatus}
+                            label={user.AccountStatus}
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", gap: 1 }}>
+                            <Tooltip title="Edit">
+                              <IconButton
+                                color="primary"
+                                onClick={() => handleEditUser(user.UserId)}
+                                sx={{
+                                  backgroundColor: "action.hover",
+                                  "&:hover": {
+                                    backgroundColor: "primary.light",
+                                    color: "common.white",
+                                  },
+                                }}
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  {emptyRows > 0 && (
+                    <TableRow style={{ height: 53 * emptyRows }}>
+                      <TableCell colSpan={5} />
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={filteredUsers.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                sx={{
+                  borderTop: `1px solid ${theme.palette.divider}`,
+                }}
+              />
+            </TableContainer>
           )}
-        </CardContent>
-      </Card>
+        </Box>
+      </Paper>
 
       {/* Add User Dialog */}
       <Dialog
@@ -918,7 +705,6 @@ const AddUser = () => {
         fullWidth
         PaperProps={{
           sx: {
-            overflow: "hidden",
             borderRadius: 2,
           },
         }}
@@ -926,25 +712,16 @@ const AddUser = () => {
         <DialogTitle
           sx={{
             backgroundColor: "primary.main",
-            color: "primary.contrastText",
+            color: "common.white",
             fontWeight: 600,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Avatar
-              sx={{
-                width: 40,
-                height: 40,
-                mr: 2,
-                backgroundColor: "primary.dark",
-              }}
-            >
-              <Add sx={{ fontSize: 24 }} />
-            </Avatar>
+            <Add sx={{ mr: 1 }} />
             Add New User
           </Box>
         </DialogTitle>
-        <DialogContent sx={{ mt: 4 }}>
+        <DialogContent sx={{ mt: 3 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -957,9 +734,6 @@ const AddUser = () => {
                 helperText={formErrors.username}
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  sx: { borderRadius: 2 },
-                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -974,9 +748,6 @@ const AddUser = () => {
                 helperText={formErrors.email}
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  sx: { borderRadius: 2 },
-                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -991,14 +762,6 @@ const AddUser = () => {
                 helperText={formErrors.password}
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <LockIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  sx: { borderRadius: 2 },
-                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -1012,14 +775,6 @@ const AddUser = () => {
                 helperText={formErrors.fullName}
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <PersonIcon color="action" />
-                    </InputAdornment>
-                  ),
-                  sx: { borderRadius: 2 },
-                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -1035,25 +790,16 @@ const AddUser = () => {
                 helperText={formErrors.dob}
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  sx: { borderRadius: 2 },
-                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormControl
-                fullWidth
-                size="small"
-                error={!!formErrors.gender}
-                sx={{ mb: 2 }}
-              >
+              <FormControl fullWidth size="small" error={!!formErrors.gender}>
                 <InputLabel>Gender</InputLabel>
                 <Select
                   label="Gender"
                   name="gender"
                   value={newUser.gender}
                   onChange={handleInputChange}
-                  sx={{ borderRadius: 2 }}
                 >
                   <MenuItem value="Male">Male</MenuItem>
                   <MenuItem value="Female">Female</MenuItem>
@@ -1077,25 +823,16 @@ const AddUser = () => {
                 helperText={formErrors.mobile}
                 size="small"
                 sx={{ mb: 2 }}
-                InputProps={{
-                  sx: { borderRadius: 2 },
-                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <FormControl
-                fullWidth
-                size="small"
-                error={!!formErrors.roleId}
-                sx={{ mb: 2 }}
-              >
+              <FormControl fullWidth size="small" error={!!formErrors.roleId}>
                 <InputLabel>Role</InputLabel>
                 <Select
                   label="Role"
                   name="roleId"
                   value={newUser.roleId}
                   onChange={handleInputChange}
-                  sx={{ borderRadius: 2 }}
                 >
                   {roles.map((role) => (
                     <MenuItem key={role.id} value={role.id}>
@@ -1122,16 +859,11 @@ const AddUser = () => {
                 error={!!formErrors.address}
                 helperText={formErrors.address}
                 size="small"
-                InputProps={{
-                  sx: { borderRadius: 2 },
-                }}
               />
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions
-          sx={{ p: 3, borderTop: "1px solid", borderColor: "divider" }}
-        >
+        <DialogActions sx={{ p: 3 }}>
           <Button
             onClick={handleCloseAddDialog}
             variant="outlined"
@@ -1140,7 +872,6 @@ const AddUser = () => {
               px: 3,
               borderRadius: 2,
               fontWeight: 600,
-              "&:hover": { backgroundColor: "action.hover" },
             }}
           >
             Cancel
