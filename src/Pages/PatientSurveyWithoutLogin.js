@@ -872,7 +872,7 @@ const PatientSurveyWithoutLogin = () => {
             <Stack spacing={2}>
               {showCamera ? (
                 <Stack spacing={2}>
-                  <Typography variant="body2" sx={{ color: "#6a1b9a" }}>
+                  <Typography variant="body2" sx={{ color: "#B84121" }}>
                     Capturing: {currentCaptureLabel}
                   </Typography>
                   <video
@@ -886,7 +886,7 @@ const PatientSurveyWithoutLogin = () => {
                       variant="contained"
                       onClick={handleCapturePhoto}
                       sx={{
-                        backgroundColor: "#6a1b9a",
+                        backgroundColor: "#B84121",
                         "&:hover": { backgroundColor: "#7b1fa2" },
                       }}
                     >
@@ -896,9 +896,9 @@ const PatientSurveyWithoutLogin = () => {
                       variant="outlined"
                       onClick={handleCancelCamera}
                       sx={{
-                        color: "#6a1b9a",
-                        borderColor: "#6a1b9a",
-                        "&:hover": { borderColor: "#6a1b9a" },
+                        color: "#B84121",
+                        borderColor: "#B84121",
+                        "&:hover": { borderColor: "#B84121" },
                       }}
                     >
                       Cancel
@@ -918,7 +918,7 @@ const PatientSurveyWithoutLogin = () => {
                             maxHeight: "200px",
                             objectFit: "contain",
                             borderRadius: "12px",
-                            border: `1px solid ${alpha("#6a1b9a", 0.3)}`,
+                            border: `1px solid ${alpha("#B84121", 0.3)}`,
                           }}
                         />
                       )}
@@ -929,11 +929,11 @@ const PatientSurveyWithoutLogin = () => {
                           variant="outlined"
                           component="label"
                           sx={{
-                            borderColor: alpha("#6a1b9a", 0.3),
-                            color: "#6a1b9a",
+                            borderColor: alpha("#B84121", 0.3),
+                            color: "#B84121",
                             "&:hover": {
-                              borderColor: "#6a1b9a",
-                              backgroundColor: alpha("#6a1b9a", 0.04),
+                              borderColor: "#B84121",
+                              backgroundColor: alpha("#B84121", 0.04),
                             },
                           }}
                         >
@@ -953,11 +953,11 @@ const PatientSurveyWithoutLogin = () => {
                           variant="outlined"
                           onClick={() => handleStartCamera(option.OptionText)}
                           sx={{
-                            borderColor: alpha("#6a1b9a", 0.3),
-                            color: "#6a1b9a",
+                            borderColor: alpha("#B84121", 0.3),
+                            color: "#B84121",
                             "&:hover": {
-                              borderColor: "#6a1b9a",
-                              backgroundColor: alpha("#6a1b9a", 0.04),
+                              borderColor: "#B84121",
+                              backgroundColor: alpha("#B84121", 0.04),
                             },
                           }}
                         >
@@ -1180,7 +1180,7 @@ const PatientSurveyWithoutLogin = () => {
               <Box
                 sx={{
                   height: 8,
-                  bgcolor: "#6a1b9a",
+                  bgcolor: "#B84121",
                   borderRadius: 5,
                   width: `${
                     ((questionIndex + 1) / totalQuestionsInStep) * 100
@@ -1250,7 +1250,7 @@ const SidebarText = () => {
           <Typography
             variant="h6"
             sx={{
-              color: "#6a1b9a",
+              color: "#B84121",
               fontWeight: 600,
               mb: 1,
             }}
@@ -1333,7 +1333,7 @@ const SidebarText = () => {
               title={
                 <Typography
                   variant="h5"
-                  sx={{ color: "#6a1b9a", fontWeight: 600 }}
+                  sx={{ color: "#B84121", fontWeight: 600 }}
                 >
                   {currentStep === 1
                     ? "Tell Us About Your Skin"
@@ -1374,7 +1374,7 @@ const SidebarText = () => {
                     <>
                       <Typography
                         variant="subtitle1"
-                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 }}
+                        sx={{ color: "#B84121", fontWeight: 500, mb: 1 }}
                       >
                         {currentQuestion.QuestionText}
                       </Typography>
@@ -1396,7 +1396,7 @@ const SidebarText = () => {
               title={
                 <Typography
                   variant="h5"
-                  sx={{ color: "#6a1b9a", fontWeight: 600 }}
+                  sx={{ color: "#B84121", fontWeight: 600 }}
                 >
                   What Happens Next?
                 </Typography>
@@ -1428,7 +1428,7 @@ const SidebarText = () => {
                         width: 8,
                         height: 8,
                         borderRadius: "50%",
-                        backgroundColor: "#6a1b9a",
+                        backgroundColor: "#B84121",
                         marginRight: 8,
                       }}
                     ></span>
@@ -1438,7 +1438,7 @@ const SidebarText = () => {
               </Stack>
               <Typography
                 variant="body2"
-                sx={{ mt: 2, color: "#6a1b9a", fontStyle: "italic" }}
+                sx={{ mt: 2, color: "#B84121", fontStyle: "italic" }}
               >
                 Let's begin your journey toward clearer, healthier skin —
                 together.
@@ -1452,11 +1452,11 @@ const SidebarText = () => {
                 variant="outlined"
                 onClick={handlePreviousQuestion}
                 sx={{
-                  color: "#6a1b9a",
-                  borderColor: "#6a1b9a",
+                  color: "#B84121",
+                  borderColor: "#B84121",
                   "&:hover": {
-                    backgroundColor: alpha("#6a1b9a", 0.04),
-                    borderColor: "#6a1b9a",
+                    backgroundColor: alpha("#B84121", 0.04),
+                    borderColor: "#B84121",
                   },
                 }}
               >
@@ -1471,7 +1471,7 @@ const SidebarText = () => {
                 variant="contained"
                 onClick={handleNextQuestion}
                 sx={{
-                  backgroundColor: "#6a1b9a",
+                  backgroundColor: "#B84121",
                   "&:hover": { backgroundColor: "#7b1fa2" },
                 }}
               >
@@ -1508,10 +1508,10 @@ const SidebarText = () => {
                 Your trust means everything to us. At Skin & Soul, we're
                 committed to protecting your personal information.
               </Typography>
-              <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
+              <Divider sx={{ my: 2, borderColor: alpha("#B84121", 0.2) }} />
               <Typography
                 variant="subtitle1"
-                sx={{ color: "#6a1b9a", fontWeight: 500 }}
+                sx={{ color: "#B84121", fontWeight: 500 }}
               >
                 How We Use Your Personal Information
               </Typography>
@@ -1538,7 +1538,7 @@ const SidebarText = () => {
                         width: 6,
                         height: 6,
                         borderRadius: "50%",
-                        backgroundColor: "#6a1b9a",
+                        backgroundColor: "#B84121",
                         marginRight: 8,
                       }}
                     ></span>
@@ -1546,10 +1546,10 @@ const SidebarText = () => {
                   </Typography>
                 ))}
               </Stack>
-              <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
+              <Divider sx={{ my: 2, borderColor: alpha("#B84121", 0.2) }} />
               <Typography
                 variant="subtitle1"
-                sx={{ color: "#6a1b9a", fontWeight: 500 }}
+                sx={{ color: "#B84121", fontWeight: 500 }}
               >
                 What Information Do We Collect?
               </Typography>
@@ -1568,7 +1568,7 @@ const SidebarText = () => {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title" sx={{ color: "#6a1b9a" }}>
+        <DialogTitle id="alert-dialog-title" sx={{ color: "#B84121" }}>
           Confirm Submission
         </DialogTitle>
         <DialogContent>
@@ -1579,14 +1579,14 @@ const SidebarText = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseConfirmation} sx={{ color: "#6a1b9a" }}>
+          <Button onClick={handleCloseConfirmation} sx={{ color: "#B84121" }}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             autoFocus
             sx={{
-              backgroundColor: "#6a1b9a",
+              backgroundColor: "#B84121",
               color: "white",
               "&:hover": { backgroundColor: "#7b1fa2" },
             }}

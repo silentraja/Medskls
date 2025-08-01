@@ -58,7 +58,7 @@ const DrawerHeader = styled("div")(({ theme }) => ({
 }));
 
 const GradientText = styled(Typography)(({ theme }) => ({
-  background: "linear-gradient(90deg, #3f51b5, #2196f3)",
+  background: "linear-gradient(90deg, #F1BD2B, #fedd83ff)",
   WebkitBackgroundClip: "text",
   backgroundClip: "text",
   color: "transparent",
@@ -76,7 +76,7 @@ const GradientText = styled(Typography)(({ theme }) => ({
     bottom: -4,
     width: "100%",
     height: "2px",
-    background: "linear-gradient(90deg, #3f51b5, #2196f3)",
+    background: "linear-gradient(90deg, #F1BD2B, #fedd83ff)",
     borderRadius: "2px",
   },
 }));
@@ -424,7 +424,6 @@ const Layout = ({ children }) => {
         flexDirection: "column",
         height: "100%",
         background: theme.palette.background.lightBeige,
-        backgroundColor: "#f0f8ff",
       }}
     >
       <DrawerHeader>
