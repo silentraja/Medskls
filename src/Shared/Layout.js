@@ -49,7 +49,7 @@ const drawerWidth = 240;
 const collapsedWidth = 72;
 
 const DrawerHeader = styled("div")(({ theme }) => ({
-  backgroundColor: "#f0f8ff",
+  backgroundColor: theme.palette.background.lightBeige,
   display: "flex",
   alignItems: "center",
   padding: theme.spacing(0, 1),
@@ -87,6 +87,7 @@ const NavItem = styled(ListItemButton)(({ theme, level = 0, selected }) => ({
   minHeight: 44,
   paddingLeft: theme.spacing(level > 0 ? 4 : 3),
   transition: "all 0.2s ease",
+  backgroundColor: theme.palette.background.lightBeige, // Added background color
   "&.Mui-selected": {
     backgroundColor: theme.palette.primary.lighter,
     color: theme.palette.primary.dark,
@@ -422,7 +423,7 @@ const Layout = ({ children }) => {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        background: theme.palette.background.paper,
+        background: theme.palette.background.lightBeige,
         backgroundColor: "#f0f8ff",
       }}
     >
@@ -443,7 +444,7 @@ const Layout = ({ children }) => {
             alignItems: "center",
             gap: 1.5,
             borderBottom: `1px solid ${theme.palette.divider}`,
-            backgroundColor: "#f0f8ff",
+            backgroundColor: theme.palette.background.lightBeige,
           }}
         >
           <Avatar
@@ -661,7 +662,7 @@ const Layout = ({ children }) => {
             duration: theme.transitions.duration.leavingScreen,
           }),
           boxShadow: "none",
-          backgroundColor: "#f0f8ff",
+          backgroundColor: theme.palette.background.lightBeige,
           color: theme.palette.text.primary,
           borderBottom: `1px solid ${theme.palette.divider}`,
         }}
