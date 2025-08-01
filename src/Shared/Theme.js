@@ -1,4 +1,4 @@
-// theme.js or wherever you create your MUI theme
+// theme.js
 import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
@@ -14,7 +14,9 @@ const theme = createTheme({
     },
   },
   typography: {
-    // You can adjust fonts too if needed
+    TitleFont: {
+      fontFamily: "'Masqualero', sans-serif",
+    },
   },
 });
 

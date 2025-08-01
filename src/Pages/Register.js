@@ -50,22 +50,20 @@ const Register = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Check for pending survey data
   useEffect(() => {
-    const pendingSurvey = localStorage.getItem('pendingPatientSubmission');
+    const pendingSurvey = localStorage.getItem("pendingPatientSubmission");
     const fromSurvey = location.state?.fromSurvey;
-    
+
     if (fromSurvey && location.state?.surveyData?.personalInfo) {
-      // Pre-fill form with survey data
       const { personalInfo } = location.state.surveyData;
-      setUserData(prev => ({
+      setUserData((prev) => ({
         ...prev,
         fullName: personalInfo.fullName || "",
         email: personalInfo.email || "",
         mobile: personalInfo.phone || "",
         address: personalInfo.address || "",
         gender: personalInfo.gender || "",
-        dob: personalInfo.dob || ""
+        dob: personalInfo.dob || "",
       }));
     }
 
@@ -107,8 +105,7 @@ const Register = () => {
       const result = await register(userData);
       if (result.success) {
         if (hasPendingSurvey) {
-          // Redirect back to survey to complete submission
-          navigate('/patient-survey-out');
+          navigate("/patient-survey-out");
         } else {
           navigate("/login");
         }
@@ -129,7 +126,7 @@ const Register = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setUserData((prev) => ({ ...prev, [name]: value }));
-    setFieldErrors((prev) => ({ ...prev, [name]: "" })); // clear field error on change
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   return (
@@ -162,14 +159,14 @@ const Register = () => {
               left: 0,
               width: isMobile ? 0 : "30%",
               height: isMobile ? "120px" : "100%",
-              background: "linear-gradient(45deg, #1976d2, #2196f3)",
+              background: "linear-gradient(45deg, #F1BD2B, #FFD95A)", // ✅ updated
               zIndex: 0,
               opacity: isMobile ? 0.1 : 1,
               borderRadius: isMobile ? "3px 3px 0 0" : "3px 0 0 3px",
             },
           }}
         >
-          {/* Left */}
+          {/* Left side */}
           <Box
             sx={{
               flex: isMobile ? 0 : 0.6,
@@ -187,19 +184,24 @@ const Register = () => {
               variant={isMobile ? "h5" : "h4"}
               sx={{ fontWeight: 700, mb: 1 }}
             >
-              {hasPendingSurvey ? "Complete Your Registration" : "Create Account"}
+              {hasPendingSurvey
+                ? "Complete Your Registration"
+                : "Create Account"}
             </Typography>
-            <Typography
-              variant={isMobile ? "body2" : "body1"}
-              sx={{ mb: 3 }}
-            >
-              {hasPendingSurvey 
-                ? "Finish creating your account to submit your survey" 
+            <Typography variant={isMobile ? "body2" : "body1"} sx={{ mb: 3 }}>
+              {hasPendingSurvey
+                ? "Finish creating your account to submit your survey"
                 : "Join us today and get started!"}
             </Typography>
             {!isMobile && (
               <Box sx={{ mt: "auto" }}>
-                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.875rem" }}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "rgba(255,255,255,0.7)",
+                    fontSize: "0.875rem",
+                  }}
+                >
                   Already have an account?
                 </Typography>
                 <Link to="/login">
@@ -225,7 +227,7 @@ const Register = () => {
             )}
           </Box>
 
-          {/* Right */}
+          {/* Right side */}
           <Box
             sx={{
               flex: 1.4,
@@ -239,7 +241,8 @@ const Register = () => {
           >
             {hasPendingSurvey && (
               <Alert severity="info" sx={{ mb: 2 }}>
-                You have an incomplete survey. Your information will be saved after registration.
+                You have an incomplete survey. Your information will be saved
+                after registration.
               </Alert>
             )}
 
@@ -259,14 +262,25 @@ const Register = () => {
               </Typography>
             )}
 
-            <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box
+              component="form"
+              onSubmit={handleSubmit}
+              sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+            >
               {[
                 ["username", "email", AccountCircle, Email],
                 ["password", "fullName", Lock, Person],
                 ["dob", "gender", Cake, null],
                 ["mobile", "address", Phone, Home],
               ].map(([field1, field2, Icon1, Icon2], index) => (
-                <Box key={index} sx={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 2 }}>
+                <Box
+                  key={index}
+                  sx={{
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: 2,
+                  }}
+                >
                   {[field1, field2].map((field, idx) => {
                     const Icon = idx === 0 ? Icon1 : Icon2;
                     if (!field) return null;
@@ -297,7 +311,12 @@ const Register = () => {
 
                     if (field === "gender") {
                       return (
-                        <FormControl key={field} fullWidth size="small" error={Boolean(fieldErrors.gender)}>
+                        <FormControl
+                          key={field}
+                          fullWidth
+                          size="small"
+                          error={Boolean(fieldErrors.gender)}
+                        >
                           <InputLabel>Gender</InputLabel>
                           <Select
                             name="gender"
@@ -323,9 +342,14 @@ const Register = () => {
                         key={field}
                         fullWidth
                         size="small"
-                        required={["username", "password", "email"].includes(field)}
+                        required={["username", "password", "email"].includes(
+                          field
+                        )}
                         type={field === "password" ? "password" : "text"}
-                        label={field.charAt(0).toUpperCase() + field.slice(1).replace("Name", " Name")}
+                        label={
+                          field.charAt(0).toUpperCase() +
+                          field.slice(1).replace("Name", " Name")
+                        }
                         name={field}
                         value={userData[field]}
                         onChange={handleChange}
@@ -353,9 +377,9 @@ const Register = () => {
                   py: 1.25,
                   fontWeight: 600,
                   borderRadius: 1,
-                  background: "linear-gradient(45deg, #1976d2, #2196f3)",
+                  background: "linear-gradient(45deg, #F1BD2B, #FFD95A)", // ✅ updated
                   "&:hover": {
-                    background: "linear-gradient(45deg, #1565c0, #1e88e5)",
+                    background: "linear-gradient(45deg, #D9A500, #F1BD2B)", // ✅ updated
                   },
                 }}
               >
@@ -369,9 +393,19 @@ const Register = () => {
               </Button>
 
               {isMobile && (
-                <Typography variant="body2" sx={{ textAlign: "center", mt: 2 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ textAlign: "center", mt: 2 }}
+                >
                   Already have an account?{" "}
-                  <Link to="/login" style={{ textDecoration: "none", color: theme.palette.primary.main, fontWeight: 500 }}>
+                  <Link
+                    to="/login"
+                    style={{
+                      textDecoration: "none",
+                      color: theme.palette.primary.main,
+                      fontWeight: 500,
+                    }}
+                  >
                     Sign In
                   </Link>
                 </Typography>
