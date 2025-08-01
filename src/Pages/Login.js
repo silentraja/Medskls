@@ -113,7 +113,7 @@ const Login = () => {
               left: 0,
               width: isMobile ? "100%" : "40%",
               height: isMobile ? "30%" : "100%",
-              background: "linear-gradient(45deg, #1976d2, #2196f3)",
+              background: "linear-gradient(45deg, #FFBC00, #FFD95A)",
               zIndex: 0,
               opacity: isMobile ? 0 : 1,
               borderRadius: isMobile ? "3px 3px 0 0" : "3px 0 0 3px",
@@ -360,9 +360,9 @@ const Login = () => {
                   borderRadius: 1,
                   fontSize: "0.875rem",
                   fontWeight: 600,
-                  background: "linear-gradient(45deg, #1976d2, #2196f3)",
+                  background: "linear-gradient(45deg, #FFBC00, #FFD95A)",
                   "&:hover": {
-                    background: "linear-gradient(45deg, #1565c0, #1e88e5)",
+                    background: "linear-gradient(45deg, #D9A500, #F1BD2B)",
                   },
                 }}
               >
