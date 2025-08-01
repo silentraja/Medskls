@@ -208,7 +208,7 @@ const PersonalProfileDoc = () => {
       >
         <CardHeader
           title={
-            <Typography variant="h4" fontWeight="bold" color="primary">
+            <Typography variant="h4" fontWeight="bold" color={theme.palette.primary.MainTextColor}>
               Doctor Profile
             </Typography>
           }
@@ -356,7 +356,7 @@ const PersonalProfileDoc = () => {
                 fontWeight="bold"
                 gutterBottom
                 sx={{
-                  background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%)`,
+                  background: `linear-gradient(45deg, ${theme.palette.primary.MainTextColor} 30%)`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                 }}

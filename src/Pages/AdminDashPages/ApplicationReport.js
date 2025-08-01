@@ -236,7 +236,7 @@ const ApplicationReport = () => {
               variant="h4"
               sx={{
                 fontWeight: 700,
-                color: "primary.main",
+                color: theme.palette.primary.MainTextColor,
                 display: "flex",
                 alignItems: "center",
                 gap: 1,
@@ -341,7 +341,7 @@ const ApplicationReport = () => {
             <Typography
               variant="h5"
               fontWeight={600}
-              sx={{ color: "primary.main" }}
+              sx={{ color: theme.palette.primary.MainTextColor }}
             >
               Application List
             </Typography>

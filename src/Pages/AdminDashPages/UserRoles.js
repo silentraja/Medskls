@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useTheme } from "@mui/material/styles";
 import {
   Table,
   TableBody,
@@ -48,7 +49,7 @@ const UserRoles = () => {
     message: "",
     severity: "success",
   });
-
+  const theme = useTheme(); 
   useEffect(() => {
     fetchRoles();
   }, []);
@@ -201,13 +202,14 @@ const UserRoles = () => {
             display: "flex",
             alignItems: "center",
             gap: 1,
-            color: "primary.main",
+            color: theme.palette.primary.MainTextColor,
           }}
         >
           <GroupIcon fontSize="large" />
           <Typography
             variant="h4"
             sx={{
+              color : theme.palette.primary.MainTextColor,
               fontWeight: 700,
               display: "flex", // Hide on extra-small screens
             }}

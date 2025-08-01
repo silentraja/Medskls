@@ -339,7 +339,7 @@ const AttachInvoiceSale = () => {
             variant={isSmallScreen ? "h6" : "h4"}
             sx={{
               fontWeight: 700,
-              color: "primary.main",
+              color: theme.palette.primary.MainTextColor,
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",

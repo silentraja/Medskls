@@ -292,7 +292,7 @@ const ChangePassword = () => {
               variant="h4"
               sx={{
                 fontWeight: 700,
-                color: "primary.main",
+                color: theme.palette.primary.MainTextColor,
                 display: "flex",
                 alignItems: "center",
                 gap: 1,
