@@ -12,6 +12,7 @@ const theme = createTheme({
     },
     background: {
       default: "#fefefe",
+      lightBeige: "#FFF9E9"
     },
   },
   typography: {
