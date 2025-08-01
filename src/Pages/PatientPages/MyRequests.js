@@ -731,7 +731,7 @@ const PatientSurvey = () => {
                 From Skin Concerns to Personalized Care
               </Typography>
               <Typography variant="body1" sx={{ color: "#555" }}>
-                At Medskls Apothecary, our mission is to give you skincare that
+                At Skin & Soul, our mission is to give you skincare that
                 actually works—customized for your unique skin and your
                 real-life routine. This journey begins with understanding you.
                 Here's how we guide you through a smooth, thoughtful
@@ -1105,7 +1105,7 @@ const PatientSurvey = () => {
 
           <StyledMainCard>
             <Typography variant="body1" gutterBottom sx={{ color: "#555" }}>
-              Your trust means everything to us. At Medskls Apothecary, we're
+              Your trust means everything to us. At Skin & Soul, we're
               committed to protecting your personal information.
             </Typography>
             <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
