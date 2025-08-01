@@ -220,7 +220,7 @@ const Dashboard = () => {
           variant={isMobile ? "h5" : "h4"}
           sx={{
             fontWeight: 700,
-            background: "linear-gradient(45deg, #1976d2, #2196f3)",
+            background: "black",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
           }}

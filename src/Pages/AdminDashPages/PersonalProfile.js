@@ -209,7 +209,11 @@ const PersonalProfile = () => {
       >
         <CardHeader
           title={
-            <Typography variant="h4" fontWeight="bold" color="primary">
+            <Typography
+              variant="h4"
+              fontWeight="bold"
+              color={theme.palette.primary.MainTextColor}
+            >
               My Profile
             </Typography>
           }
@@ -347,10 +351,9 @@ const PersonalProfile = () => {
                 variant="h3"
                 fontWeight="bold"
                 gutterBottom
+                color={theme.palette.primary.MainTextColor}
                 sx={{
-                  background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%)`,
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
+                  fontFamily: theme.typography.TitleFont.fontFamily,
                 }}
               >
                 {formData.FullName}

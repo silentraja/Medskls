@@ -680,10 +680,10 @@ const Layout = ({ children }) => {
           <Box sx={{ flexGrow: 1 }}>
             <Box
               component="img"
-              src="/images/WEBLOGO.png"
+              src="/images/Logo2.png"
               alt="Medskls Logo"
               sx={{
-                height: 40,
+                height: 50,
                 maxWidth: "100%",
                 objectFit: "contain",
               }}
