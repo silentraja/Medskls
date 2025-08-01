@@ -1043,7 +1043,7 @@ const PatientSurveyWithoutLogin = () => {
                             variant="outlined"
                             value={
                               specifyTexts[
-                                `${question.QuestionId}_${option.OptionId}`
+                              `${question.QuestionId}_${option.OptionId}`
                               ] || ""
                             }
                             onChange={(e) =>
@@ -1054,12 +1054,12 @@ const PatientSurveyWithoutLogin = () => {
                             }
                             error={
                               !!validationErrors[
-                                `${question.QuestionId}_${option.OptionId}`
+                              `${question.QuestionId}_${option.OptionId}`
                               ]
                             }
                             helperText={
                               validationErrors[
-                                `${question.QuestionId}_${option.OptionId}`
+                              `${question.QuestionId}_${option.OptionId}`
                               ]
                             }
                           />
@@ -1182,9 +1182,8 @@ const PatientSurveyWithoutLogin = () => {
                   height: 8,
                   bgcolor: "#B84121",
                   borderRadius: 5,
-                  width: `${
-                    ((questionIndex + 1) / totalQuestionsInStep) * 100
-                  }%`,
+                  width: `${((questionIndex + 1) / totalQuestionsInStep) * 100
+                    }%`,
                   transition: "width 0.3s ease",
                 }}
               />
@@ -1203,8 +1202,8 @@ const PatientSurveyWithoutLogin = () => {
             {currentStep === 1
               ? "Skin Concerns"
               : currentStep === 2
-              ? "Lifestyle"
-              : "Consents"}
+                ? "Lifestyle"
+                : "Consents"}
           </Typography>
         </Box>
       );
@@ -1212,25 +1211,47 @@ const PatientSurveyWithoutLogin = () => {
     return null;
   };
 
-const SidebarText = () => {
-  // ✅ Define all sections
+  const SidebarText = ({ currentStep, questionIndex }) => {
   const sections = [
     {
       title: "Tell Us About Your Skin",
       description:
         "What you're experiencing matters deeply to us. The more we understand your skin's journey, the better we can support it.",
+      step: 1,
+      totalQuestions: 7, // Update this with actual number of questions in step 1
     },
     {
       title: "Your Lifestyle + Habits",
       description:
         "Your daily life plays a major role in your skin's health. This part helps us understand what your skin goes through every day.",
+      step: 2,
+      totalQuestions: 5, // Update this with actual number of questions in step 2
     },
     {
       title: "Ready for Your Treatment Plan",
       description:
         "We're ready to create your personalized treatment plan. Review your information and let's get started.",
+      step: 3,
+      totalQuestions: 3, // Update this with actual number of questions in step 3
     },
   ];
+
+  // Calculate progress percentage
+  const calculateProgress = () => {
+    let totalQuestions = 0;
+    let completedQuestions = 0;
+    
+    sections.forEach(section => {
+      if (section.step < currentStep) {
+        completedQuestions += section.totalQuestions;
+      } else if (section.step === currentStep) {
+        completedQuestions += questionIndex;
+      }
+      totalQuestions += section.totalQuestions;
+    });
+    
+    return (completedQuestions / totalQuestions) * 100;
+  };
 
   return (
     <Paper
@@ -1245,23 +1266,87 @@ const SidebarText = () => {
         display: { xs: "none", md: "block" },
       }}
     >
-      {sections.map((section, index) => (
-        <Box key={index} sx={{ mb: 3 }}>
-          <Typography
-            variant="h6"
+      {/* Vertical Progress Indicator */}
+      <Box
+        sx={{
+          position: "absolute",
+          left: 16,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          bgcolor: "#e0e0e0",
+          borderRadius: 2,
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: `${calculateProgress()}%`,
+            bgcolor: "#B84121",
+            borderRadius: 2,
+            transition: "height 0.3s ease",
+          }}
+        />
+      </Box>
+
+      {/* Step Indicators */}
+      {sections.map((section, index) => {
+        const isCurrentStep = currentStep === section.step;
+        const isCompletedStep = currentStep > section.step;
+        
+        return (
+          <Box
+            key={index}
             sx={{
-              color: "#B84121",
-              fontWeight: 600,
-              mb: 1,
+              position: "relative",
+              pl: 4,
+              mb: 3,
+              "&:before": {
+                content: '""',
+                position: "absolute",
+                left: -8,
+                top: 8,
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                backgroundColor: isCompletedStep 
+                  ? "#B84121" 
+                  : isCurrentStep 
+                    ? "#B84121" 
+                    : "#e0e0e0",
+                border: "3px solid",
+                borderColor: isCurrentStep ? "#B84121" : "transparent",
+                zIndex: 1,
+                transition: "all 0.3s ease",
+              },
             }}
           >
-            {section.title}
-          </Typography>
-          <Typography variant="body1" sx={{ color: "#555" }}>
-            {section.description}
-          </Typography>
-        </Box>
-      ))}
+            <Typography
+              variant="h6"
+              sx={{
+                color: isCompletedStep || isCurrentStep ? "#B84121" : "#555",
+                fontWeight: 600,
+                mb: 1,
+                transition: "color 0.3s ease",
+              }}
+            >
+              {section.title}
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: isCompletedStep || isCurrentStep ? "#555" : "#999",
+                transition: "color 0.3s ease",
+              }}
+            >
+              {section.description}
+            </Typography>
+          </Box>
+        );
+      })}
     </Paper>
   );
 };
@@ -1287,8 +1372,11 @@ const SidebarText = () => {
           alignSelf: "flex-start",
         }}
       >
-      <SidebarText currentStep={currentStep} />
-      </Grid>
+        <SidebarText
+          currentStep={currentStep}
+          questionIndex={questionIndex}
+          totalQuestionsInStep={totalQuestionsInStep}
+        />      </Grid>
 
       {/* Main Content Column */}
       <Grid
@@ -1338,8 +1426,8 @@ const SidebarText = () => {
                   {currentStep === 1
                     ? "Tell Us About Your Skin"
                     : currentStep === 2
-                    ? "Your Lifestyle + Habits"
-                    : "Ready for Your Treatment Plan"}
+                      ? "Your Lifestyle + Habits"
+                      : "Ready for Your Treatment Plan"}
                 </Typography>
               }
             >
@@ -1350,9 +1438,9 @@ const SidebarText = () => {
                   {currentQuestion.QuestionText.toLowerCase().includes(
                     "consent"
                   ) ||
-                  currentQuestion.QuestionText.toLowerCase().includes(
-                    "agree"
-                  ) ? (
+                    currentQuestion.QuestionText.toLowerCase().includes(
+                      "agree"
+                    ) ? (
                     <FormControlLabel
                       control={
                         <StyledCheckbox
@@ -1470,7 +1558,8 @@ const SidebarText = () => {
               <NavigationButton
                 variant="contained"
                 onClick={handleNextQuestion}
-                sx={{
+                sx={{                
+                  color : "White",
                   backgroundColor: "#B84121",
                   "&:hover": { backgroundColor: "#7b1fa2" },
                 }}
@@ -1478,8 +1567,8 @@ const SidebarText = () => {
                 {questionIndex < totalQuestionsInStep - 1
                   ? "Next Question"
                   : currentStep < 3
-                  ? "Continue to Next Section"
-                  : "Review Submission"}
+                    ? "Continue to Next Section"
+                    : "Review Submission"}
               </NavigationButton>
             ) : (
               <ColorButton
