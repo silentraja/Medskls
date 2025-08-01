@@ -886,7 +886,8 @@ const PrescriptionListDoc = () => {
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button
             onClick={() => setDialogOpen(false)}
-            variant="outlined"
+            variant="outlined" 
+            color = {theme.palette.primary.main} 
             sx={{
               borderRadius: 2,
               px: 3,
@@ -1277,6 +1278,7 @@ const PrescriptionListDoc = () => {
           <Button
             onClick={() => setAnswersDialogOpen(false)}
             variant="outlined"
+            color= {theme.palette.primary.main}
             sx={{
               borderRadius: 2,
               px: 3,
@@ -1371,6 +1373,7 @@ const PrescriptionListDoc = () => {
           <Button
             onClick={() => setDoctorFeedbackDialogOpen(false)}
             variant="outlined"
+            color= {theme.palette.primary.main}
             sx={{
               borderRadius: 2,
               px: 3,

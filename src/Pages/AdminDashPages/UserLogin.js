@@ -622,6 +622,7 @@ const UserLogin = () => {
             <Button
               onClick={handleCloseDialog}
               variant="outlined"
+              color = {theme.palette.primary.main}
               sx={{
                 borderRadius: 2,
                 px: 3,

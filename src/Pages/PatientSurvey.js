@@ -1272,6 +1272,7 @@ const PatientSurvey = () => {
                 variant="contained"
                 onClick={handleNext}
                 sx={{
+                  color: "#fff",
                   backgroundColor: "#B84121",
                   "&:hover": { backgroundColor: "#7b1fa2" },
                 }}

@@ -388,6 +388,7 @@ const UserRoles = () => {
           <Button
             onClick={handleClose}
             variant="outlined"
+            color= {theme.palette.primary.main}
             sx={{
               borderRadius: 2,
               px: 3,

@@ -1322,6 +1322,7 @@ const AddInvoicePharma = () => {
           <Button
             onClick={() => setAnswersDialogOpen(false)}
             variant="outlined"
+            color = {theme.palette.primary.main}
             sx={{
               borderRadius: 2,
               px: 3,
