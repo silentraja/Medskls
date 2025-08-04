@@ -1426,7 +1426,7 @@ const PatientSurveyWithoutLogin = () => {
               title={
                 <Typography
                   variant="h5"
-                  sx={{ color: "#B84121", fontWeight: 600 }}
+                  sx={{ color: "#B84121", fontWeight: 600, fontSize: "32px",textAlign: "center" }}
                 >
                   {currentStep === 1
                     ? "Tell Us About Your Skin"
