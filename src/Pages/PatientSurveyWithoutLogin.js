@@ -1467,7 +1467,7 @@ const PatientSurveyWithoutLogin = () => {
                     <>
                       <Typography
                         variant="subtitle1"
-                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 }}
+                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 , fontSize: "16px",}}
                       >
                         {currentQuestion.QuestionText}
                       </Typography>
