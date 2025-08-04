@@ -1024,10 +1024,15 @@ const PatientSurveyWithoutLogin = () => {
                               }}
                             />
                           }
-                          label={option.OptionText.replace(
-                            /\(please mention.*\)/i,
-                            ""
-                          )}
+                          label={
+                            <Typography sx={{ fontSize: "16px" }}>
+                              {option.OptionText.replace(
+                                /(\(please mention.*\))/i,
+                                ""
+                              )}
+                            </Typography>
+                          }
+                          sx={{ fontSize: "16px" }} // Ensures the label container also respects 16px
                         />
                         {shouldShowSpecify && (
                           <MultilineSpecifyField
@@ -1374,7 +1379,7 @@ const SidebarText = () => {
                     <>
                       <Typography
                         variant="subtitle1"
-                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 }}
+                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 , fontSize : '16px'}}
                       >
                         {currentQuestion.QuestionText}
                       </Typography>
