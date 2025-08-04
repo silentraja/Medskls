@@ -872,7 +872,7 @@ const PatientSurveyWithoutLogin = () => {
             <Stack spacing={2}>
               {showCamera ? (
                 <Stack spacing={2}>
-                  <Typography variant="body2" sx={{ color: "#6a1b9a" }}>
+                  <Typography variant="body2" sx={{ color: "#B84121" }}>
                     Capturing: {currentCaptureLabel}
                   </Typography>
                   <video
@@ -886,7 +886,7 @@ const PatientSurveyWithoutLogin = () => {
                       variant="contained"
                       onClick={handleCapturePhoto}
                       sx={{
-                        backgroundColor: "#6a1b9a",
+                        backgroundColor: "#B84121",
                         "&:hover": { backgroundColor: "#7b1fa2" },
                       }}
                     >
@@ -896,9 +896,9 @@ const PatientSurveyWithoutLogin = () => {
                       variant="outlined"
                       onClick={handleCancelCamera}
                       sx={{
-                        color: "#6a1b9a",
-                        borderColor: "#6a1b9a",
-                        "&:hover": { borderColor: "#6a1b9a" },
+                        color: "#B84121",
+                        borderColor: "#B84121",
+                        "&:hover": { borderColor: "#B84121" },
                       }}
                     >
                       Cancel
@@ -918,7 +918,7 @@ const PatientSurveyWithoutLogin = () => {
                             maxHeight: "200px",
                             objectFit: "contain",
                             borderRadius: "12px",
-                            border: `1px solid ${alpha("#6a1b9a", 0.3)}`,
+                            border: `1px solid ${alpha("#B84121", 0.3)}`,
                           }}
                         />
                       )}
@@ -929,11 +929,11 @@ const PatientSurveyWithoutLogin = () => {
                           variant="outlined"
                           component="label"
                           sx={{
-                            borderColor: alpha("#6a1b9a", 0.3),
-                            color: "#6a1b9a",
+                            borderColor: alpha("#B84121", 0.3),
+                            color: "#B84121",
                             "&:hover": {
-                              borderColor: "#6a1b9a",
-                              backgroundColor: alpha("#6a1b9a", 0.04),
+                              borderColor: "#B84121",
+                              backgroundColor: alpha("#B84121", 0.04),
                             },
                           }}
                         >
@@ -953,11 +953,11 @@ const PatientSurveyWithoutLogin = () => {
                           variant="outlined"
                           onClick={() => handleStartCamera(option.OptionText)}
                           sx={{
-                            borderColor: alpha("#6a1b9a", 0.3),
-                            color: "#6a1b9a",
+                            borderColor: alpha("#B84121", 0.3),
+                            color: "#B84121",
                             "&:hover": {
-                              borderColor: "#6a1b9a",
-                              backgroundColor: alpha("#6a1b9a", 0.04),
+                              borderColor: "#B84121",
+                              backgroundColor: alpha("#B84121", 0.04),
                             },
                           }}
                         >
@@ -1048,7 +1048,7 @@ const PatientSurveyWithoutLogin = () => {
                             variant="outlined"
                             value={
                               specifyTexts[
-                                `${question.QuestionId}_${option.OptionId}`
+                              `${question.QuestionId}_${option.OptionId}`
                               ] || ""
                             }
                             onChange={(e) =>
@@ -1059,12 +1059,12 @@ const PatientSurveyWithoutLogin = () => {
                             }
                             error={
                               !!validationErrors[
-                                `${question.QuestionId}_${option.OptionId}`
+                              `${question.QuestionId}_${option.OptionId}`
                               ]
                             }
                             helperText={
                               validationErrors[
-                                `${question.QuestionId}_${option.OptionId}`
+                              `${question.QuestionId}_${option.OptionId}`
                               ]
                             }
                           />
@@ -1185,11 +1185,10 @@ const PatientSurveyWithoutLogin = () => {
               <Box
                 sx={{
                   height: 8,
-                  bgcolor: "#6a1b9a",
+                  bgcolor: "#B84121",
                   borderRadius: 5,
-                  width: `${
-                    ((questionIndex + 1) / totalQuestionsInStep) * 100
-                  }%`,
+                  width: `${((questionIndex + 1) / totalQuestionsInStep) * 100
+                    }%`,
                   transition: "width 0.3s ease",
                 }}
               />
@@ -1208,8 +1207,8 @@ const PatientSurveyWithoutLogin = () => {
             {currentStep === 1
               ? "Skin Concerns"
               : currentStep === 2
-              ? "Lifestyle"
-              : "Consents"}
+                ? "Lifestyle"
+                : "Consents"}
           </Typography>
         </Box>
       );
@@ -1217,25 +1216,47 @@ const PatientSurveyWithoutLogin = () => {
     return null;
   };
 
-const SidebarText = () => {
-  // ✅ Define all sections
+  const SidebarText = ({ currentStep, questionIndex }) => {
   const sections = [
     {
       title: "Tell Us About Your Skin",
       description:
         "What you're experiencing matters deeply to us. The more we understand your skin's journey, the better we can support it.",
+      step: 1,
+      totalQuestions: 7, // Update this with actual number of questions in step 1
     },
     {
       title: "Your Lifestyle + Habits",
       description:
         "Your daily life plays a major role in your skin's health. This part helps us understand what your skin goes through every day.",
+      step: 2,
+      totalQuestions: 5, // Update this with actual number of questions in step 2
     },
     {
       title: "Ready for Your Treatment Plan",
       description:
         "We're ready to create your personalized treatment plan. Review your information and let's get started.",
+      step: 3,
+      totalQuestions: 3, // Update this with actual number of questions in step 3
     },
   ];
+
+  // Calculate progress percentage
+  const calculateProgress = () => {
+    let totalQuestions = 0;
+    let completedQuestions = 0;
+    
+    sections.forEach(section => {
+      if (section.step < currentStep) {
+        completedQuestions += section.totalQuestions;
+      } else if (section.step === currentStep) {
+        completedQuestions += questionIndex;
+      }
+      totalQuestions += section.totalQuestions;
+    });
+    
+    return (completedQuestions / totalQuestions) * 100;
+  };
 
   return (
     <Paper
@@ -1250,23 +1271,87 @@ const SidebarText = () => {
         display: { xs: "none", md: "block" },
       }}
     >
-      {sections.map((section, index) => (
-        <Box key={index} sx={{ mb: 3 }}>
-          <Typography
-            variant="h6"
+      {/* Vertical Progress Indicator */}
+      <Box
+        sx={{
+          position: "absolute",
+          left: 16,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          bgcolor: "#e0e0e0",
+          borderRadius: 2,
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: `${calculateProgress()}%`,
+            bgcolor: "#B84121",
+            borderRadius: 2,
+            transition: "height 0.3s ease",
+          }}
+        />
+      </Box>
+
+      {/* Step Indicators */}
+      {sections.map((section, index) => {
+        const isCurrentStep = currentStep === section.step;
+        const isCompletedStep = currentStep > section.step;
+        
+        return (
+          <Box
+            key={index}
             sx={{
-              color: "#6a1b9a",
-              fontWeight: 600,
-              mb: 1,
+              position: "relative",
+              pl: 4,
+              mb: 3,
+              "&:before": {
+                content: '""',
+                position: "absolute",
+                left: -8,
+                top: 8,
+                width: 16,
+                height: 16,
+                borderRadius: "50%",
+                backgroundColor: isCompletedStep 
+                  ? "#B84121" 
+                  : isCurrentStep 
+                    ? "#B84121" 
+                    : "#e0e0e0",
+                border: "3px solid",
+                borderColor: isCurrentStep ? "#B84121" : "transparent",
+                zIndex: 1,
+                transition: "all 0.3s ease",
+              },
             }}
           >
-            {section.title}
-          </Typography>
-          <Typography variant="body1" sx={{ color: "#555" }}>
-            {section.description}
-          </Typography>
-        </Box>
-      ))}
+            <Typography
+              variant="h6"
+              sx={{
+                color: isCompletedStep || isCurrentStep ? "#B84121" : "#555",
+                fontWeight: 600,
+                mb: 1,
+                transition: "color 0.3s ease",
+              }}
+            >
+              {section.title}
+            </Typography>
+            <Typography
+              variant="body1"
+              sx={{
+                color: isCompletedStep || isCurrentStep ? "#555" : "#999",
+                transition: "color 0.3s ease",
+              }}
+            >
+              {section.description}
+            </Typography>
+          </Box>
+        );
+      })}
     </Paper>
   );
 };
@@ -1292,8 +1377,11 @@ const SidebarText = () => {
           alignSelf: "flex-start",
         }}
       >
-      <SidebarText currentStep={currentStep} />
-      </Grid>
+        <SidebarText
+          currentStep={currentStep}
+          questionIndex={questionIndex}
+          totalQuestionsInStep={totalQuestionsInStep}
+        />      </Grid>
 
       {/* Main Content Column */}
       <Grid
@@ -1338,13 +1426,13 @@ const SidebarText = () => {
               title={
                 <Typography
                   variant="h5"
-                  sx={{ color: "#6a1b9a", fontWeight: 600 }}
+                  sx={{ color: "#B84121", fontWeight: 600 }}
                 >
                   {currentStep === 1
                     ? "Tell Us About Your Skin"
                     : currentStep === 2
-                    ? "Your Lifestyle + Habits"
-                    : "Ready for Your Treatment Plan"}
+                      ? "Your Lifestyle + Habits"
+                      : "Ready for Your Treatment Plan"}
                 </Typography>
               }
             >
@@ -1355,9 +1443,9 @@ const SidebarText = () => {
                   {currentQuestion.QuestionText.toLowerCase().includes(
                     "consent"
                   ) ||
-                  currentQuestion.QuestionText.toLowerCase().includes(
-                    "agree"
-                  ) ? (
+                    currentQuestion.QuestionText.toLowerCase().includes(
+                      "agree"
+                    ) ? (
                     <FormControlLabel
                       control={
                         <StyledCheckbox
@@ -1379,7 +1467,7 @@ const SidebarText = () => {
                     <>
                       <Typography
                         variant="subtitle1"
-                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 , fontSize : '16px'}}
+                        sx={{ color: "#6a1b9a", fontWeight: 500, mb: 1 }}
                       >
                         {currentQuestion.QuestionText}
                       </Typography>
@@ -1401,7 +1489,7 @@ const SidebarText = () => {
               title={
                 <Typography
                   variant="h5"
-                  sx={{ color: "#6a1b9a", fontWeight: 600 }}
+                  sx={{ color: "#B84121", fontWeight: 600 }}
                 >
                   What Happens Next?
                 </Typography>
@@ -1433,7 +1521,7 @@ const SidebarText = () => {
                         width: 8,
                         height: 8,
                         borderRadius: "50%",
-                        backgroundColor: "#6a1b9a",
+                        backgroundColor: "#B84121",
                         marginRight: 8,
                       }}
                     ></span>
@@ -1443,7 +1531,7 @@ const SidebarText = () => {
               </Stack>
               <Typography
                 variant="body2"
-                sx={{ mt: 2, color: "#6a1b9a", fontStyle: "italic" }}
+                sx={{ mt: 2, color: "#B84121", fontStyle: "italic" }}
               >
                 Let's begin your journey toward clearer, healthier skin —
                 together.
@@ -1457,11 +1545,11 @@ const SidebarText = () => {
                 variant="outlined"
                 onClick={handlePreviousQuestion}
                 sx={{
-                  color: "#6a1b9a",
-                  borderColor: "#6a1b9a",
+                  color: "#B84121",
+                  borderColor: "#B84121",
                   "&:hover": {
-                    backgroundColor: alpha("#6a1b9a", 0.04),
-                    borderColor: "#6a1b9a",
+                    backgroundColor: alpha("#B84121", 0.04),
+                    borderColor: "#B84121",
                   },
                 }}
               >
@@ -1475,16 +1563,17 @@ const SidebarText = () => {
               <NavigationButton
                 variant="contained"
                 onClick={handleNextQuestion}
-                sx={{
-                  backgroundColor: "#6a1b9a",
+                sx={{                
+                  color : "White",
+                  backgroundColor: "#B84121",
                   "&:hover": { backgroundColor: "#7b1fa2" },
                 }}
               >
                 {questionIndex < totalQuestionsInStep - 1
                   ? "Next Question"
                   : currentStep < 3
-                  ? "Continue to Next Section"
-                  : "Review Submission"}
+                    ? "Continue to Next Section"
+                    : "Review Submission"}
               </NavigationButton>
             ) : (
               <ColorButton
@@ -1513,10 +1602,10 @@ const SidebarText = () => {
                 Your trust means everything to us. At Skin & Soul, we're
                 committed to protecting your personal information.
               </Typography>
-              <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
+              <Divider sx={{ my: 2, borderColor: alpha("#B84121", 0.2) }} />
               <Typography
                 variant="subtitle1"
-                sx={{ color: "#6a1b9a", fontWeight: 500 }}
+                sx={{ color: "#B84121", fontWeight: 500 }}
               >
                 How We Use Your Personal Information
               </Typography>
@@ -1543,7 +1632,7 @@ const SidebarText = () => {
                         width: 6,
                         height: 6,
                         borderRadius: "50%",
-                        backgroundColor: "#6a1b9a",
+                        backgroundColor: "#B84121",
                         marginRight: 8,
                       }}
                     ></span>
@@ -1551,10 +1640,10 @@ const SidebarText = () => {
                   </Typography>
                 ))}
               </Stack>
-              <Divider sx={{ my: 2, borderColor: alpha("#6a1b9a", 0.2) }} />
+              <Divider sx={{ my: 2, borderColor: alpha("#B84121", 0.2) }} />
               <Typography
                 variant="subtitle1"
-                sx={{ color: "#6a1b9a", fontWeight: 500 }}
+                sx={{ color: "#B84121", fontWeight: 500 }}
               >
                 What Information Do We Collect?
               </Typography>
@@ -1573,7 +1662,7 @@ const SidebarText = () => {
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title" sx={{ color: "#6a1b9a" }}>
+        <DialogTitle id="alert-dialog-title" sx={{ color: "#B84121" }}>
           Confirm Submission
         </DialogTitle>
         <DialogContent>
@@ -1584,14 +1673,14 @@ const SidebarText = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseConfirmation} sx={{ color: "#6a1b9a" }}>
+          <Button onClick={handleCloseConfirmation} sx={{ color: "#B84121" }}>
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             autoFocus
             sx={{
-              backgroundColor: "#6a1b9a",
+              backgroundColor: "#B84121",
               color: "white",
               "&:hover": { backgroundColor: "#7b1fa2" },
             }}

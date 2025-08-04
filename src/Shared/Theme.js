@@ -6,7 +6,7 @@ const theme = createTheme({
     primary: {
       main: "#F1BD2B",   // main gold
       dark: "#D9A500",   // darker gold
-      light: "#FFD95A",  // lighter gold
+      light: "#F1BD2B",  // lighter gold
       contrastText: "#000", // text on gold buttons
       MainTextColor : "#000000",
     },

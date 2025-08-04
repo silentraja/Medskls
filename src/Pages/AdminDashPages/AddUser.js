@@ -867,7 +867,7 @@ const AddUser = () => {
           <Button
             onClick={handleCloseAddDialog}
             variant="outlined"
-            color="primary"
+            color= {theme.palette.primary.main}
             sx={{
               px: 3,
               borderRadius: 2,

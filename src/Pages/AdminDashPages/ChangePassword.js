@@ -536,7 +536,7 @@ const ChangePassword = () => {
                         <Button
                           size="small"
                           variant="outlined"
-                          color="primary"
+                          color={theme.palette.primary.main}
                           onClick={() => startEditing(user.UserId)}
                           startIcon={<LockIcon fontSize="small" />}
                           sx={{
