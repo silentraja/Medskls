@@ -16,6 +16,7 @@ import {
   Select,
   MenuItem,
   Alert,
+  Snackbar,
 } from "@mui/material";
 import {
   AccountCircle,
@@ -45,6 +46,7 @@ const Register = () => {
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [hasPendingSurvey, setHasPendingSurvey] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const navigate = useNavigate();
   const { register } = useAuth();
   const theme = useTheme();
@@ -73,69 +75,68 @@ const Register = () => {
   }, [location.state]);
 
   const validateFields = () => {
-  const errors = {};
+    const errors = {};
 
-  if (!userData.username.trim()) {
-    errors.username = "Username is required.";
-  } else if (userData.username.length < 3) {
-    errors.username = "Username must be at least 3 characters.";
-  }
-
-  if (!userData.email.trim()) {
-    errors.email = "Email is required.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
-    errors.email = "Invalid email format.";
-  }
-
-  if (!userData.password) {
-    errors.password = "Password is required.";
-  } else if (userData.password.length < 6) {
-    errors.password = "Password must be at least 6 characters.";
-  }
-
-  if (!userData.fullName.trim()) {
-    errors.fullName = "Full name is required.";
-  }
-
-  if (!userData.dob) {
-    errors.dob = "Date of birth is required.";
-  } else {
-    const dobDate = new Date(userData.dob);
-    const today = new Date();
-
-    const age = today.getFullYear() - dobDate.getFullYear();
-    const monthDiff = today.getMonth() - dobDate.getMonth();
-    const dayDiff = today.getDate() - dobDate.getDate();
-
-    const exactAge =
-      age - (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? 1 : 0);
-
-    if (exactAge > 120) {
-      errors.dob = "Add a Valid Date of Birth.";
+    if (!userData.username.trim()) {
+      errors.username = "Username is required.";
+    } else if (userData.username.length < 3) {
+      errors.username = "Username must be at least 3 characters.";
     }
-  }
 
-  if (!userData.gender) {
-    errors.gender = "Gender is required.";
-  } else if (!["M", "F", "O"].includes(userData.gender)) {
-    errors.gender = "Invalid gender selection.";
-  }
+    if (!userData.email.trim()) {
+      errors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
+      errors.email = "Invalid email format.";
+    }
 
-  if (!userData.mobile.trim()) {
-    errors.mobile = "Mobile number is required.";
-  } else if (!/^[0-9]{10,15}$/.test(userData.mobile)) {
-    errors.mobile = "Mobile number must be 10 to 15 digits.";
-  }
+    if (!userData.password) {
+      errors.password = "Password is required.";
+    } else if (userData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters.";
+    }
 
-  if (!userData.address.trim()) {
-    errors.address = "Address is required.";
-  } else if (userData.address.length < 5) {
-    errors.address = "Address is too short.";
-  }
+    if (!userData.fullName.trim()) {
+      errors.fullName = "Full name is required.";
+    }
 
-  return errors;
-};
+    if (!userData.dob) {
+      errors.dob = "Date of birth is required.";
+    } else {
+      const dobDate = new Date(userData.dob);
+      const today = new Date();
 
+      const age = today.getFullYear() - dobDate.getFullYear();
+      const monthDiff = today.getMonth() - dobDate.getMonth();
+      const dayDiff = today.getDate() - dobDate.getDate();
+
+      const exactAge =
+        age - (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? 1 : 0);
+
+      if (exactAge > 120) {
+        errors.dob = "Add a Valid Date of Birth.";
+      }
+    }
+
+    if (!userData.gender) {
+      errors.gender = "Gender is required.";
+    } else if (!["M", "F", "O"].includes(userData.gender)) {
+      errors.gender = "Invalid gender selection.";
+    }
+
+    if (!userData.mobile.trim()) {
+      errors.mobile = "Mobile number is required.";
+    } else if (!/^[0-9]{10,15}$/.test(userData.mobile)) {
+      errors.mobile = "Mobile number must be 10 to 15 digits.";
+    }
+
+    if (!userData.address.trim()) {
+      errors.address = "Address is required.";
+    } else if (userData.address.length < 5) {
+      errors.address = "Address is too short.";
+    }
+
+    return errors;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -153,11 +154,15 @@ const Register = () => {
     try {
       const result = await register(userData);
       if (result.success) {
-        if (hasPendingSurvey) {
-          navigate("/patient-survey-out");
-        } else {
-          navigate("/login");
-        }
+        setRegistrationSuccess(true);
+        setTimeout(() => {
+          if (hasPendingSurvey) {
+            navigate("/patient-survey-out");
+          } else {
+            // navigate("/login");
+            console.log("Going to login")
+          }
+        }, 2000);
       } else {
         setError(result.message || "Registration failed. Please try again.");
       }
@@ -176,6 +181,10 @@ const Register = () => {
     const { name, value } = e.target;
     setUserData((prev) => ({ ...prev, [name]: value }));
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleCloseSnackbar = () => {
+    setRegistrationSuccess(false);
   };
 
   return (
@@ -208,7 +217,7 @@ const Register = () => {
               left: 0,
               width: isMobile ? 0 : "30%",
               height: isMobile ? "120px" : "100%",
-              background: "linear-gradient(45deg, #F1BD2B, #FFD95A)", // ✅ updated
+              background: "linear-gradient(45deg, #F1BD2B, #FFD95A)",
               zIndex: 0,
               opacity: isMobile ? 0.1 : 1,
               borderRadius: isMobile ? "3px 3px 0 0" : "3px 0 0 3px",
@@ -426,9 +435,9 @@ const Register = () => {
                   py: 1.25,
                   fontWeight: 600,
                   borderRadius: 1,
-                  background: "linear-gradient(45deg, #F1BD2B, #FFD95A)", // ✅ updated
+                  background: "linear-gradient(45deg, #F1BD2B, #FFD95A)",
                   "&:hover": {
-                    background: "linear-gradient(45deg, #D9A500, #F1BD2B)", // ✅ updated
+                    background: "linear-gradient(45deg, #D9A500, #F1BD2B)",
                   },
                 }}
               >
@@ -463,6 +472,21 @@ const Register = () => {
           </Box>
         </Paper>
       </Fade>
+
+      <Snackbar
+        open={registrationSuccess}
+        autoHideDuration={3000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          Registration successful!
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
