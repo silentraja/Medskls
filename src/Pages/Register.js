@@ -73,20 +73,69 @@ const Register = () => {
   }, [location.state]);
 
   const validateFields = () => {
-    const errors = {};
-    if (!userData.username) errors.username = "Username is required.";
-    if (!userData.email) {
-      errors.email = "Email is required.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
-      errors.email = "Invalid email format.";
+  const errors = {};
+
+  if (!userData.username.trim()) {
+    errors.username = "Username is required.";
+  } else if (userData.username.length < 3) {
+    errors.username = "Username must be at least 3 characters.";
+  }
+
+  if (!userData.email.trim()) {
+    errors.email = "Email is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email)) {
+    errors.email = "Invalid email format.";
+  }
+
+  if (!userData.password) {
+    errors.password = "Password is required.";
+  } else if (userData.password.length < 6) {
+    errors.password = "Password must be at least 6 characters.";
+  }
+
+  if (!userData.fullName.trim()) {
+    errors.fullName = "Full name is required.";
+  }
+
+  if (!userData.dob) {
+    errors.dob = "Date of birth is required.";
+  } else {
+    const dobDate = new Date(userData.dob);
+    const today = new Date();
+
+    const age = today.getFullYear() - dobDate.getFullYear();
+    const monthDiff = today.getMonth() - dobDate.getMonth();
+    const dayDiff = today.getDate() - dobDate.getDate();
+
+    const exactAge =
+      age - (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? 1 : 0);
+
+    if (exactAge > 120) {
+      errors.dob = "Add a Valid Date of Birth.";
     }
-    if (!userData.password) {
-      errors.password = "Password is required.";
-    } else if (userData.password.length < 6) {
-      errors.password = "Password must be at least 6 characters.";
-    }
-    return errors;
-  };
+  }
+
+  if (!userData.gender) {
+    errors.gender = "Gender is required.";
+  } else if (!["M", "F", "O"].includes(userData.gender)) {
+    errors.gender = "Invalid gender selection.";
+  }
+
+  if (!userData.mobile.trim()) {
+    errors.mobile = "Mobile number is required.";
+  } else if (!/^[0-9]{10,15}$/.test(userData.mobile)) {
+    errors.mobile = "Mobile number must be 10 to 15 digits.";
+  }
+
+  if (!userData.address.trim()) {
+    errors.address = "Address is required.";
+  } else if (userData.address.length < 5) {
+    errors.address = "Address is too short.";
+  }
+
+  return errors;
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
